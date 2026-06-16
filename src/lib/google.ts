@@ -1,0 +1,100 @@
+// Server-side Google REST helpers. Keyless reads of PUBLIC Drive folders and a
+// PUBLIC calendar using a restricted API key. Never import this from client code.
+
+import "server-only";
+
+const DRIVE_ENDPOINT = "https://www.googleapis.com/drive/v3/files";
+const CAL_BASE = "https://www.googleapis.com/calendar/v3/calendars";
+
+function apiKey(): string {
+  const k = process.env.GOOGLE_API_KEY;
+  if (!k) throw new Error("Missing GOOGLE_API_KEY");
+  return k;
+}
+
+export interface DriveFile {
+  id: string;
+  name: string;
+  mimeType: string;
+  webViewLink?: string;
+  thumbnailLink?: string;
+  modifiedTime?: string;
+  size?: string;
+}
+
+export function isFolder(mimeType: string) {
+  return mimeType === "application/vnd.google-apps.folder";
+}
+
+// List immediate children of a public Drive folder.
+export async function listDriveFolder(folderId: string): Promise<DriveFile[]> {
+  const params = new URLSearchParams({
+    q: `'${folderId}' in parents and trashed = false`,
+    key: apiKey(),
+    fields:
+      "files(id,name,mimeType,webViewLink,thumbnailLink,modifiedTime,size)",
+    orderBy: "folder,name",
+    pageSize: "200",
+    supportsAllDrives: "true",
+    includeItemsFromAllDrives: "true",
+  });
+
+  const res = await fetch(`${DRIVE_ENDPOINT}?${params}`, {
+    // Cache listings briefly to keep the tree snappy without going stale.
+    next: { revalidate: 300 },
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Drive API ${res.status}: ${body.slice(0, 300)}`);
+  }
+  const data = (await res.json()) as { files?: DriveFile[] };
+  return data.files ?? [];
+}
+
+export interface CalendarEvent {
+  id: string;
+  summary: string;
+  description?: string;
+  location?: string;
+  start: { dateTime?: string; date?: string };
+  end?: { dateTime?: string; date?: string };
+}
+
+// List upcoming events from a public calendar (already expanded to instances).
+export async function listCalendarEvents(
+  calendarId: string,
+  opts: { daysAhead?: number; daysBehind?: number } = {},
+): Promise<CalendarEvent[]> {
+  const now = new Date();
+  const timeMin = new Date(now);
+  timeMin.setDate(timeMin.getDate() - (opts.daysBehind ?? 30));
+  const timeMax = new Date(now);
+  timeMax.setDate(timeMax.getDate() + (opts.daysAhead ?? 200));
+
+  const params = new URLSearchParams({
+    key: apiKey(),
+    singleEvents: "true",
+    orderBy: "startTime",
+    timeMin: timeMin.toISOString(),
+    timeMax: timeMax.toISOString(),
+    maxResults: "250",
+  });
+
+  const res = await fetch(
+    `${CAL_BASE}/${encodeURIComponent(calendarId)}/events?${params}`,
+    { next: { revalidate: 600 } },
+  );
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Calendar API ${res.status}: ${body.slice(0, 300)}`);
+  }
+  const data = (await res.json()) as { items?: CalendarEvent[] };
+  return data.items ?? [];
+}
+
+// Exams = events whose title contains "testes" (case-insensitive).
+export function isExam(ev: CalendarEvent) {
+  return (ev.summary ?? "").toLowerCase().includes("testes");
+}

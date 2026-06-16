@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+/* ── Design tokens ported 1:1 from the prototype (study-base.html) ── */
+:root {
+  color-scheme: dark;
+  --bg: #191919;
+  --sb: #1e1e1e;
+  --card: #252525;
+  --card2: #2c2c2c;
+  --border: #333333;
+  --border2: #272727;
+  --text: #e8e8e8;
+  --muted: #8b8b8b;
+  --dim: #444444;
+  --accent: #2383e2;
+  --accent-a: rgba(35, 131, 226, 0.14);
+  --red: #e05555;
+  --red-a: rgba(224, 85, 85, 0.14);
+  --green: #4caf7d;
+  --green-a: rgba(76, 175, 125, 0.14);
+  --orange: #e8a838;
+  --orange-a: rgba(232, 168, 56, 0.14);
+}
+
+/* Expose the tokens to Tailwind utilities (bg-app, text-muted, etc.) */
+@theme inline {
+  --color-app: var(--bg);
+  --color-sidebar: var(--sb);
+  --color-card: var(--card);
+  --color-card2: var(--card2);
+  --color-edge: var(--border);
+  --color-edge2: var(--border2);
+  --color-fg: var(--text);
+  --color-muted: var(--muted);
+  --color-dim: var(--dim);
+  --color-accent: var(--accent);
+  --color-accentSoft: var(--accent-a);
+  --color-red: var(--red);
+  --color-redSoft: var(--red-a);
+  --color-green: var(--green);
+  --color-greenSoft: var(--green-a);
+  --color-orange: var(--orange);
+  --color-orangeSoft: var(--orange-a);
+  --radius-card: 6px;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Thin Notion-style scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#2383e2"/>
+  <g transform="translate(256 256)">
+    <!-- open book -->
+    <path d="M-150 -70 C -110 -100, -30 -100, 0 -78 C 30 -100, 110 -100, 150 -70 L 150 86 C 110 60, 30 60, 0 82 C -30 60, -110 60, -150 86 Z"
+          fill="#ffffff"/>
+    <path d="M0 -78 L 0 82" stroke="#2383e2" stroke-width="10" fill="none"/>
+    <path d="M-130 -56 C -96 -76, -34 -76, -10 -60" stroke="#cfe3fb" stroke-width="9" fill="none" stroke-linecap="round"/>
+    <path d="M130 -56 C 96 -76, 34 -76, 10 -60" stroke="#cfe3fb" stroke-width="9" fill="none" stroke-linecap="round"/>
+    <path d="M-130 -22 C -96 -42, -34 -42, -10 -26" stroke="#e6f0fd" stroke-width="9" fill="none" stroke-linecap="round"/>
+    <path d="M130 -22 C 96 -42, 34 -42, 10 -26" stroke="#e6f0fd" stroke-width="9" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>

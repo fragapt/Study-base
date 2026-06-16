@@ -1,0 +1,20 @@
+{
+  "name": "Base de Estudo",
+  "short_name": "Estudo",
+  "description": "Hub de estudo — drives, exames, notas e progresso por cadeira.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#191919",
+  "theme_color": "#191919",
+  "lang": "pt",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
