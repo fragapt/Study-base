@@ -16,18 +16,13 @@ describe("isFolder", () => {
 });
 
 describe("isExam", () => {
-  const ev = (summary: string): CalendarEvent => ({
-    id: "1",
-    summary,
-    start: { date: "2026-06-20" },
+  it("treats any dated event as an exam, regardless of title", () => {
+    expect(isExam({ id: "1", summary: "Teste de Eletricidade", start: { date: "2026-06-20" } })).toBe(true);
+    expect(isExam({ id: "2", summary: "Qualquer evento", start: { dateTime: "2026-06-20T10:00:00Z" } })).toBe(true);
+    expect(isExam({ id: "3", summary: "", start: { date: "2026-06-20" } })).toBe(true);
   });
-  it("matches titles containing 'testes' (case-insensitive)", () => {
-    expect(isExam(ev("Aula de testes"))).toBe(true);
-    expect(isExam(ev("TESTES de Eletricidade"))).toBe(true);
-  });
-  it("rejects titles without the keyword", () => {
-    expect(isExam(ev("Exame normal"))).toBe(false);
-    expect(isExam(ev(""))).toBe(false);
+  it("skips malformed events with no start date", () => {
+    expect(isExam({ id: "4", summary: "Sem data", start: {} } as CalendarEvent)).toBe(false);
   });
 });
 

@@ -34,7 +34,7 @@ export default function ExamesClient() {
   if (!exams || exams.length === 0) {
     return (
       <p className="rounded-card border border-edge bg-card p-4 text-[13px] text-muted">
-        Nenhum exame encontrado (eventos com “testes” no título).
+        Nenhum exame encontrado no calendário.
       </p>
     );
   }

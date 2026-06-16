@@ -18,6 +18,19 @@ npm install
 npm run dev
 ```
 
+## Tests
+```powershell
+npm test         # run the full Vitest suite once
+npm run test:watch
+```
+53 tests across 12 files (Vitest + React Testing Library):
+- **lib** — `dates`, `constants` (normalize/exam matching/data integrity), `files`, `google` (fetch-mocked Drive/Calendar helpers).
+- **API routes** — `/api/drive` and `/api/calendar` (integration against a stubbed `fetch`), `/api/cron/reminders` (auth 401, send path, dedupe, day-window filtering).
+- **components** — `ExamCard`, `NoteItem`, `SubjectBadge`, `Sidebar` (active route), `ProgressChecklist`.
+
+Test files are excluded from the Next build type-check (`tsconfig.json`); server-only
+modules are aliased to a stub under test (`vitest.config.ts`).
+
 ## Structure
 ```
 src/

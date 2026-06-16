@@ -6,7 +6,7 @@ export default function ExamesPage() {
     <div className="mx-auto max-w-4xl">
       <PageHeader
         title="Exames"
-        subtitle="Contagem decrescente dos exames (eventos com “testes” no título)."
+        subtitle="Contagem decrescente de todos os exames do calendário."
       />
       <ExamesClient />
     </div>

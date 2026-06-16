@@ -20,7 +20,7 @@ export const DRIVE_BY_KEY: Record<DriveKey, DriveDef> = Object.fromEntries(
   DRIVES.map((d) => [d.key, d]),
 ) as Record<DriveKey, DriveDef>;
 
-// Public exam calendar (filter events whose title contains "testes").
+// Public exam calendar (every event on it is treated as an exam).
 export const EXAM_CALENDAR_ID =
   "3dedf14fedcfa1802d7cf9cff01fdc08ee5c0b6e9a60c61f2d6aae0d414d8673@group.calendar.google.com";
 

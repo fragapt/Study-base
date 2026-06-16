@@ -3,7 +3,7 @@ import { listCalendarEvents, isExam } from "@/lib/google";
 import { EXAM_CALENDAR_ID } from "@/lib/constants";
 import type { ExamDTO } from "@/lib/exam";
 
-// GET /api/calendar → upcoming exams (events whose title contains "testes").
+// GET /api/calendar → upcoming exams (every event on the dedicated calendar).
 export async function GET() {
   const calendarId = process.env.EXAM_CALENDAR_ID || EXAM_CALENDAR_ID;
   try {

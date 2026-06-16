@@ -7,7 +7,9 @@ const DRIVE_ENDPOINT = "https://www.googleapis.com/drive/v3/files";
 const CAL_BASE = "https://www.googleapis.com/calendar/v3/calendars";
 
 function apiKey(): string {
-  const k = process.env.GOOGLE_API_KEY;
+  let k = (process.env.GOOGLE_API_KEY ?? "").trim();
+  // Strip a single pair of surrounding quotes (common dashboard paste mistake).
+  if (k.length >= 2 && /^(["']).*\1$/.test(k)) k = k.slice(1, -1).trim();
   if (!k) throw new Error("Missing GOOGLE_API_KEY");
   return k;
 }
@@ -94,7 +96,8 @@ export async function listCalendarEvents(
   return data.items ?? [];
 }
 
-// Exams = events whose title contains "testes" (case-insensitive).
+// The configured calendar is dedicated to exams, so every event on it counts
+// as an exam. We only skip malformed entries that have no start date/time.
 export function isExam(ev: CalendarEvent) {
-  return (ev.summary ?? "").toLowerCase().includes("testes");
+  return Boolean(ev.start && (ev.start.dateTime || ev.start.date));
 }

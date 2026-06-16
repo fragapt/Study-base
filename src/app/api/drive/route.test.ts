@@ -1,40 +1,49 @@
 // @vitest-environment node
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
-
-vi.mock("@/lib/google", () => ({ listDriveFolder: vi.fn() }));
-import { listDriveFolder } from "@/lib/google";
 import { GET } from "./route";
 
-const mocked = vi.mocked(listDriveFolder);
-
+// Integration: exercises the route + the real listDriveFolder against a stubbed fetch.
 function req(url: string) {
   return new NextRequest(url);
 }
 
-describe("GET /api/drive", () => {
-  beforeEach(() => mocked.mockReset());
+beforeEach(() => {
+  vi.stubEnv("GOOGLE_API_KEY", "testkey");
+});
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
 
+describe("GET /api/drive", () => {
   it("400s when folderId is missing", async () => {
     const res = await GET(req("http://localhost/api/drive"));
     expect(res.status).toBe(400);
   });
 
   it("returns the listed files on success", async () => {
-    mocked.mockResolvedValue([
-      { id: "f1", name: "Aula", mimeType: "application/pdf" },
-    ]);
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        files: [{ id: "f1", name: "Aula", mimeType: "application/pdf" }],
+      }),
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
     const res = await GET(req("http://localhost/api/drive?folderId=ABC"));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.files).toHaveLength(1);
-    expect(mocked).toHaveBeenCalledWith("ABC");
+    expect(body.files[0].name).toBe("Aula");
+    expect(fetchMock.mock.calls[0][0]).toContain("ABC");
   });
 
-  it("502s when the Drive helper throws", async () => {
-    mocked.mockImplementation(async () => {
-      throw new Error("Drive API 403");
-    });
+  it("502s when the Drive API returns an error", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: false, status: 403, text: async () => "forbidden" })),
+    );
     const res = await GET(req("http://localhost/api/drive?folderId=ABC"));
     expect(res.status).toBe(502);
     const body = await res.json();
