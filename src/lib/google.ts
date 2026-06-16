@@ -22,6 +22,14 @@ export interface DriveFile {
   thumbnailLink?: string;
   modifiedTime?: string;
   size?: string;
+  // Legacy link-shared items require this key to be fetched (see below).
+  resourceKey?: string;
+  // Present when the item is a shortcut; lets us follow it to the real target.
+  shortcutDetails?: {
+    targetId?: string;
+    targetMimeType?: string;
+    targetResourceKey?: string;
+  };
 }
 
 export function isFolder(mimeType: string) {
@@ -29,19 +37,33 @@ export function isFolder(mimeType: string) {
 }
 
 // List immediate children of a public Drive folder.
-export async function listDriveFolder(folderId: string): Promise<DriveFile[]> {
+//
+// Legacy (pre-2017) link-shared folders — e.g. NEEM's `0B7x…` IDs — return
+// nothing unless their resource key is supplied via the
+// `X-Goog-Drive-Resource-Keys` header (format: `<fileId>/<resourceKey>`).
+// We also request `shortcutDetails` so shortcuts can be followed to their target.
+export async function listDriveFolder(
+  folderId: string,
+  resourceKey?: string,
+): Promise<DriveFile[]> {
   const params = new URLSearchParams({
     q: `'${folderId}' in parents and trashed = false`,
     key: apiKey(),
     fields:
-      "files(id,name,mimeType,webViewLink,thumbnailLink,modifiedTime,size)",
+      "files(id,name,mimeType,webViewLink,thumbnailLink,modifiedTime,size,resourceKey,shortcutDetails(targetId,targetMimeType,targetResourceKey))",
     orderBy: "folder,name",
     pageSize: "200",
     supportsAllDrives: "true",
     includeItemsFromAllDrives: "true",
   });
 
+  const headers: Record<string, string> = {};
+  if (resourceKey) {
+    headers["X-Goog-Drive-Resource-Keys"] = `${folderId}/${resourceKey}`;
+  }
+
   const res = await fetch(`${DRIVE_ENDPOINT}?${params}`, {
+    headers,
     // Cache listings briefly to keep the tree snappy without going stale.
     next: { revalidate: 300 },
   });

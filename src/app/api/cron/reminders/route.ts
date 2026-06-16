@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import webpush from "web-push";
-import { listCalendarEvents, isExam } from "@/lib/google";
-import { EXAM_CALENDAR_ID } from "@/lib/constants";
+import { listCalendarEvents, isExam, type CalendarEvent } from "@/lib/google";
 import { daysUntil } from "@/lib/dates";
 import { createServiceClient } from "@/lib/supabase/server";
 
@@ -22,6 +21,11 @@ interface Sub {
   auth: string;
 }
 
+interface DueExam {
+  ev: CalendarEvent;
+  days: number;
+}
+
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
   const authHeader = request.headers.get("authorization");
@@ -37,34 +41,62 @@ export async function GET(request: NextRequest) {
   }
   webpush.setVapidDetails(subject, vapidPublic, vapidPrivate);
 
-  const calendarId = process.env.EXAM_CALENDAR_ID || EXAM_CALENDAR_ID;
-  const events = await listCalendarEvents(calendarId, { daysAhead: 10, daysBehind: 0 });
-  const due = events
-    .filter(isExam)
-    .map((ev) => ({
-      ev,
-      days: daysUntil(ev.start.dateTime || ev.start.date || ""),
-    }))
-    .filter(({ days }) => days in OFFSETS);
-
-  if (due.length === 0) return NextResponse.json({ sent: 0, reason: "no exams due" });
-
   const supabase = createServiceClient();
+
+  // Push subscriptions grouped by user.
   const { data: subsData } = await supabase
     .from("push_subscriptions")
     .select("id, user_id, endpoint, p256dh, auth");
   const subs = (subsData ?? []) as Sub[];
-
   const byUser = new Map<string, Sub[]>();
   subs.forEach((s) => {
     const list = byUser.get(s.user_id) ?? [];
     list.push(s);
     byUser.set(s.user_id, list);
   });
+  if (byUser.size === 0) return NextResponse.json({ sent: 0, reason: "no subs" });
+
+  // Each user's configured calendar.
+  const { data: settingsData } = await supabase
+    .from("app_settings")
+    .select("user_id, exam_calendar_id");
+  const calendarByUser = new Map<string, string>();
+  (settingsData ?? []).forEach(
+    (r: { user_id: string; exam_calendar_id: string | null }) => {
+      if (r.exam_calendar_id) calendarByUser.set(r.user_id, r.exam_calendar_id);
+    },
+  );
+
+  // Cache calendar lookups so users sharing a calendar fetch it once.
+  const dueByCalendar = new Map<string, DueExam[]>();
+  async function getDue(calendarId: string): Promise<DueExam[]> {
+    const cached = dueByCalendar.get(calendarId);
+    if (cached) return cached;
+    const events = await listCalendarEvents(calendarId, {
+      daysAhead: 10,
+      daysBehind: 0,
+    });
+    const due = events
+      .filter(isExam)
+      .map((ev) => ({ ev, days: daysUntil(ev.start.dateTime || ev.start.date || "") }))
+      .filter(({ days }) => days in OFFSETS);
+    dueByCalendar.set(calendarId, due);
+    return due;
+  }
 
   let sent = 0;
 
   for (const [userId, userSubs] of byUser) {
+    const calendarId = calendarByUser.get(userId);
+    if (!calendarId) continue;
+
+    let due: DueExam[];
+    try {
+      due = await getDue(calendarId);
+    } catch {
+      continue; // skip a user whose calendar fetch fails
+    }
+
     for (const { ev, days } of due) {
       const off = OFFSETS[days];
       const examUid = ev.id;

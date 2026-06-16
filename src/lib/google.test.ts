@@ -58,6 +58,32 @@ describe("listDriveFolder", () => {
     );
     await expect(listDriveFolder("X")).rejects.toThrow(/403/);
   });
+
+  it("sends the resource-key header for legacy folders", async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ files: [] }),
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    await listDriveFolder("LEGACY", "rk123");
+    const opts = fetchMock.mock.calls[0][1] as {
+      headers?: Record<string, string>;
+    };
+    expect(opts.headers?.["X-Goog-Drive-Resource-Keys"]).toBe("LEGACY/rk123");
+  });
+
+  it("omits the resource-key header when none is given", async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ files: [] }),
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    await listDriveFolder("NEW");
+    const opts = fetchMock.mock.calls[0][1] as {
+      headers?: Record<string, string>;
+    };
+    expect(opts.headers?.["X-Goog-Drive-Resource-Keys"]).toBeUndefined();
+  });
 });
 
 describe("listCalendarEvents", () => {

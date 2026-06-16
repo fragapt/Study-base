@@ -3,16 +3,17 @@
 import { useMemo } from "react";
 import { useExams } from "@/lib/useExams";
 import { daysUntil } from "@/lib/dates";
-import { examMatchesSubject, SubjectDef } from "@/lib/constants";
+import { examMatches } from "@/lib/constants";
+import type { SubjectRow } from "@/lib/supabase/types";
 import ExamCard from "@/components/exams/ExamCard";
 
-export default function SubjectExams({ subject }: { subject: SubjectDef }) {
+export default function SubjectExams({ subject }: { subject: SubjectRow }) {
   const { exams, loading, error } = useExams();
 
   const mine = useMemo(
     () =>
       (exams ?? [])
-        .filter((e) => examMatchesSubject(e.title, subject))
+        .filter((e) => examMatches(e.title, subject.exam_match))
         .filter((e) => daysUntil(e.start) >= 0)
         .sort((a, b) => +new Date(a.start) - +new Date(b.start)),
     [exams, subject],

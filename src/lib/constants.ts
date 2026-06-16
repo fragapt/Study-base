@@ -1,93 +1,13 @@
-// ── Static config ported from the original prototype (study-base.html) ──
-// These act as seed data for Supabase and as fallbacks before the DB is wired.
+// ── Default configuration template ──────────────────────────────────────
+// This is NO LONGER the app's live config. Drives, subjects, folder mappings,
+// study topics and the exam calendar now live in per-user Supabase tables
+// (see supabase/migrations/0002_user_config.sql). This module only provides:
+//   • DEFAULT_TEMPLATE — seed data a user can import into their own profile.
+//   • shared, dependency-free helpers (normalize, examMatches).
 
-export type DriveKey = "dna" | "neem" | "wannabe";
+// ── Matching helpers ────────────────────────────────────────────────────
 
-export interface DriveDef {
-  key: DriveKey;
-  name: string;
-  folderId: string;
-  color: string;
-}
-
-export const DRIVES: DriveDef[] = [
-  { key: "dna", name: "DNA", folderId: "1QNE0knQxCFRlomaKCKq0oJIg-0O76K4u", color: "#4A90D9" },
-  { key: "neem", name: "NEEM", folderId: "124txdIcqPreClmCCk_Pcg1S06QcLxUbQ", color: "#7DC67A" },
-  { key: "wannabe", name: "Wannabe Apontamentos", folderId: "1fjmTUZyOkeE3YwxL97_erIiK6PhPn_VD", color: "#E8A838" },
-];
-
-export const DRIVE_BY_KEY: Record<DriveKey, DriveDef> = Object.fromEntries(
-  DRIVES.map((d) => [d.key, d]),
-) as Record<DriveKey, DriveDef>;
-
-// Public exam calendar (every event on it is treated as an exam).
-export const EXAM_CALENDAR_ID =
-  "3dedf14fedcfa1802d7cf9cff01fdc08ee5c0b6e9a60c61f2d6aae0d414d8673@group.calendar.google.com";
-
-export const MONTHS_PT = [
-  "jan", "fev", "mar", "abr", "mai", "jun",
-  "jul", "ago", "set", "out", "nov", "dez",
-];
-
-// Subject → Drive folder mappings (prototype `SF`).
-export type SubjectFolderMap = Partial<Record<DriveKey, string>>;
-
-export interface SubjectDef {
-  name: string;
-  slug: string;
-  color: string;
-  icon: string;
-  folders: SubjectFolderMap;
-  // Accent-insensitive keywords used to match this subject's exam titles.
-  examMatch: string[];
-}
-
-export const SUBJECTS: SubjectDef[] = [
-  {
-    name: "Eletricidade",
-    slug: "eletricidade",
-    color: "#2383e2",
-    icon: "⚡",
-    folders: {
-      dna: "1lLHHYDta6cg5CliCKVICb1IdJ_fIFJTA",
-      neem: "0B7xIfG8giVLkX29NY3Y2Y1o0emc",
-      wannabe: "1r8mUvehBHbtkzn3RqQTB7DcCeelwN6Wg",
-    },
-    examMatch: ["eletric", "electric"],
-  },
-  {
-    name: "CFAC — Conceção e Fabrico",
-    slug: "cfac",
-    color: "#4caf7d",
-    icon: "🛠️",
-    folders: { neem: "0B7xIfG8giVLkTW05UENSdTBOSjg" },
-    examMatch: ["cfac", "concecao", "fabrico"],
-  },
-  {
-    name: "Materiais Não-Metálicos",
-    slug: "materiais-nao-metalicos",
-    color: "#e8a838",
-    icon: "🧪",
-    folders: {
-      dna: "1SI0EOGa80hIn3yN356wbBQ_bGDx-vXCE",
-      neem: "1wNQj3juuabVnBAUJWoN0q-l5lyNUoQZA",
-    },
-    examMatch: ["materiais", "nao-met", "nao met", "metalic"],
-  },
-  {
-    name: "Mecânica dos Sólidos",
-    slug: "mecanica-dos-solidos",
-    color: "#e05555",
-    icon: "🔩",
-    folders: {
-      dna: "12HjeiNmYndMX-AeecuVs2UFs5hj0D91p",
-      neem: "0B7xIfG8giVLkczZNd0tLVS1mQWc",
-    },
-    examMatch: ["mecanica", "solidos", "mec. solidos"],
-  },
-];
-
-// Accent-insensitive substring match of an exam title against a subject.
+// Accent-insensitive lowercasing for fuzzy title matching.
 export function normalize(s: string): string {
   return s
     .toLowerCase()
@@ -95,72 +15,190 @@ export function normalize(s: string): string {
     .replace(/\p{Diacritic}/gu, "");
 }
 
-export function examMatchesSubject(title: string, subject: SubjectDef): boolean {
+// True if an exam title matches any of a subject's keywords (accent-insensitive).
+export function examMatches(title: string, keywords: string[]): boolean {
   const t = normalize(title);
-  return subject.examMatch.some((k) => t.includes(normalize(k)));
+  return keywords.some((k) => k && t.includes(normalize(k)));
 }
 
-export const SUBJECT_BY_SLUG: Record<string, SubjectDef> = Object.fromEntries(
-  SUBJECTS.map((s) => [s.slug, s]),
-);
+// ── Template shapes ─────────────────────────────────────────────────────
 
-// Curated fallback study topics per subject (prototype `FALLBACK`).
-export interface TopicSeed { ti: string; de: string }
+export interface TemplateDrive {
+  key: string; // stable handle linking subject folders to a drive in the seed
+  name: string;
+  folderId: string;
+  resourceKey?: string;
+  color: string;
+}
 
-export const FALLBACK_TOPICS: Record<string, TopicSeed[]> = {
-  Eletricidade: [
-    { ti: "Leis de Kirchhoff", de: "Lei das correntes (nós) e lei das tensões (malhas)" },
-    { ti: "Circuitos DC — Resistências", de: "Associações série/paralelo, divisores de tensão e corrente" },
-    { ti: "Teoremas de Thevenin e Norton", de: "Simplificação de circuitos, cálculo de equivalentes" },
-    { ti: "Condensadores e Dielétricos", de: "Capacidade, energia armazenada, associações" },
-    { ti: "Indutores e Campo Magnético", de: "Indutância, lei de Faraday, energia no campo magnético" },
-    { ti: "Circuitos AC — Fasores", de: "Representação fasorial, impedância, admitância" },
-    { ti: "Ressonância e Filtros", de: "Frequência de ressonância, filtros passa-baixo/alta/banda" },
-    { ti: "Potência em AC", de: "Potência ativa, reativa e aparente, fator de potência" },
-    { ti: "Máquinas Elétricas", de: "Transformadores, princípio de funcionamento" },
-    { ti: "Análise de Malhas e Nós", de: "Métodos sistemáticos de resolução de circuitos" },
-    { ti: "Transitórios RC e RL", de: "Resposta natural e forçada, constante de tempo" },
-    { ti: "Semicondutores e Díodos", de: "Modelo do díodo, retificação, circuitos básicos" },
+export interface TemplateSubjectFolder {
+  driveKey: string;
+  folderId: string;
+  resourceKey?: string;
+  name?: string;
+}
+
+export interface TemplateTopic {
+  title: string;
+  description: string;
+}
+
+export interface TemplateSubject {
+  slug: string;
+  name: string;
+  color: string;
+  icon: string;
+  examMatch: string[];
+  folders: TemplateSubjectFolder[];
+  topics: TemplateTopic[];
+}
+
+export interface ConfigTemplate {
+  examCalendarId: string;
+  drives: TemplateDrive[];
+  subjects: TemplateSubject[];
+}
+
+// ── The L.EM template (the original prototype's setup) ───────────────────
+// Legacy NEEM folders (0B7x… IDs) carry resource keys, required to list them.
+
+export const DEFAULT_TEMPLATE: ConfigTemplate = {
+  examCalendarId:
+    "3dedf14fedcfa1802d7cf9cff01fdc08ee5c0b6e9a60c61f2d6aae0d414d8673@group.calendar.google.com",
+  drives: [
+    { key: "dna", name: "DNA", folderId: "1QNE0knQxCFRlomaKCKq0oJIg-0O76K4u", color: "#4A90D9" },
+    {
+      key: "neem",
+      name: "NEEM",
+      folderId: "124txdIcqPreClmCCk_Pcg1S06QcLxUbQ",
+      color: "#7DC67A",
+    },
+    {
+      key: "wannabe",
+      name: "Wannabe Apontamentos",
+      folderId: "1fjmTUZyOkeE3YwxL97_erIiK6PhPn_VD",
+      color: "#E8A838",
+    },
   ],
-  "CFAC — Conceção e Fabrico": [
-    { ti: "Modelação 3D — Sólidos", de: "Extrusão, revolução, varrimento; boas práticas de modelação" },
-    { ti: "Desenho Técnico e Normas", de: "Vistas, cortes, cotagem segundo normas ISO/EN" },
-    { ti: "Tolerâncias Dimensionais e Geométricas", de: "Sistema ISO de tolerâncias, ajustamentos, GD&T" },
-    { ti: "Processos de Maquinagem CNC", de: "Torneamento, fresagem, furação; parâmetros de corte" },
-    { ti: "Programação CNC — Código G", de: "Estrutura de programa, ciclos fixos, compensação de raio" },
-    { ti: "CAM — Estratégias de Maquinagem", de: "Desbaste, acabamento, geração de trajetórias" },
-    { ti: "Prototipagem Rápida / Impressão 3D", de: "FDM, SLA; parâmetros e limitações" },
-    { ti: "Gestão de Assemblagens", de: "Restrições, graus de liberdade, análise de interferências" },
-    { ti: "Simulação e Análise FEA", de: "Malha, condições de fronteira, interpretação de resultados" },
-    { ti: "Superfícies NURBS e Modelação de Forma Livre", de: "Criação e edição de superfícies complexas" },
-    { ti: "Folhas de Conjunto e Explosão", de: "Documentação técnica de montagem" },
-  ],
-  "Materiais Não-Metálicos": [
-    { ti: "Polímeros — Estrutura e Classificação", de: "Termoplásticos, termoendurecíveis, elastómeros; estrutura molecular" },
-    { ti: "Propriedades Mecânicas dos Polímeros", de: "Viscoelasticidade, fluência, relaxação de tensões" },
-    { ti: "Processamento de Polímeros", de: "Injeção, extrusão, sopro, termoformagem" },
-    { ti: "Materiais Compósitos — Conceitos", de: "Matriz, reforço, interface; regra das misturas" },
-    { ti: "Compósitos de Fibra", de: "Fibra de vidro, carbono, aramida; laminados" },
-    { ti: "Cerâmicos — Estrutura e Propriedades", de: "Ligação iónica/covalente, fragilidade, dureza" },
-    { ti: "Processamento de Cerâmicos", de: "Sinterização, prensagem, conformação por via húmida" },
-    { ti: "Vidros", de: "Estrutura amorfa, transição vítrea, propriedades óticas" },
-    { ti: "Ensaios e Caracterização", de: "Tração, dureza, impacto, análise térmica (DSC, TGA)" },
-    { ti: "Degradação e Durabilidade", de: "Envelhecimento UV, hidrólise, resistência química" },
-    { ti: "Seleção de Materiais", de: "Índices de desempenho, diagramas de Ashby" },
-    { ti: "Materiais Avançados e Nanomateriais", de: "Grafeno, nanotubos, aplicações emergentes" },
-  ],
-  "Mecânica dos Sólidos": [
-    { ti: "Análise de Tensão — Estado Plano", de: "Tensor de tensões, critério de Mohr, tensões principais" },
-    { ti: "Análise de Deformação", de: "Extensões, distorções, compatibilidade" },
-    { ti: "Lei de Hooke Generalizada", de: "Relações tensão-deformação para materiais isotrópicos" },
-    { ti: "Tração/Compressão e Estaticamente Indeterminado", de: "Método da força, sobreposição" },
-    { ti: "Torção de Eixos Circulares", de: "Distribuição de tensões, ângulo de torção, eixos compostos" },
-    { ti: "Flexão Pura e Composta", de: "Equação da linha elástica, momentos fletores e esforços transversos" },
-    { ti: "Tensões de Corte em Flexão", de: "Distribuição parabólica, perfis abertos e fechados" },
-    { ti: "Deformações em Vigas", de: "Integração da equação diferencial, método dos momentos de área" },
-    { ti: "Critérios de Rotura e Cedência", de: "Von Mises, Tresca, Rankine; coeficiente de segurança" },
-    { ti: "Encurvadura — Coluna de Euler", de: "Cargas críticas, comprimentos efetivos, imperfeições" },
-    { ti: "Fadiga", de: "Curva S-N, critério de Goodman, concentração de tensões" },
-    { ti: "Análise de Estruturas Reticuladas", de: "Método dos nós, método das secções" },
+  subjects: [
+    {
+      slug: "eletricidade",
+      name: "Eletricidade",
+      color: "#2383e2",
+      icon: "⚡",
+      examMatch: ["eletric", "electric"],
+      folders: [
+        { driveKey: "dna", folderId: "1lLHHYDta6cg5CliCKVICb1IdJ_fIFJTA", name: "Eletricidade" },
+        {
+          driveKey: "neem",
+          folderId: "0B7xIfG8giVLkX29NY3Y2Y1o0emc",
+          resourceKey: "0-4M3s2pSbmY_XSQe11n3jEQ",
+          name: "Eletricidade",
+        },
+        { driveKey: "wannabe", folderId: "1r8mUvehBHbtkzn3RqQTB7DcCeelwN6Wg", name: "Eletricidade" },
+      ],
+      topics: [
+        { title: "Leis de Kirchhoff", description: "Lei das correntes (nós) e lei das tensões (malhas)" },
+        { title: "Circuitos DC — Resistências", description: "Associações série/paralelo, divisores de tensão e corrente" },
+        { title: "Teoremas de Thevenin e Norton", description: "Simplificação de circuitos, cálculo de equivalentes" },
+        { title: "Condensadores e Dielétricos", description: "Capacidade, energia armazenada, associações" },
+        { title: "Indutores e Campo Magnético", description: "Indutância, lei de Faraday, energia no campo magnético" },
+        { title: "Circuitos AC — Fasores", description: "Representação fasorial, impedância, admitância" },
+        { title: "Ressonância e Filtros", description: "Frequência de ressonância, filtros passa-baixo/alta/banda" },
+        { title: "Potência em AC", description: "Potência ativa, reativa e aparente, fator de potência" },
+        { title: "Máquinas Elétricas", description: "Transformadores, princípio de funcionamento" },
+        { title: "Análise de Malhas e Nós", description: "Métodos sistemáticos de resolução de circuitos" },
+        { title: "Transitórios RC e RL", description: "Resposta natural e forçada, constante de tempo" },
+        { title: "Semicondutores e Díodos", description: "Modelo do díodo, retificação, circuitos básicos" },
+      ],
+    },
+    {
+      slug: "cfac",
+      name: "CFAC — Conceção e Fabrico",
+      color: "#4caf7d",
+      icon: "🛠️",
+      examMatch: ["cfac", "concecao", "fabrico"],
+      folders: [
+        {
+          driveKey: "neem",
+          folderId: "0B7xIfG8giVLkTW05UENSdTBOSjg",
+          resourceKey: "0-HCWgkiaKLdvTaYjRqwGsAQ",
+          name: "CFAC",
+        },
+      ],
+      topics: [
+        { title: "Modelação 3D — Sólidos", description: "Extrusão, revolução, varrimento; boas práticas de modelação" },
+        { title: "Desenho Técnico e Normas", description: "Vistas, cortes, cotagem segundo normas ISO/EN" },
+        { title: "Tolerâncias Dimensionais e Geométricas", description: "Sistema ISO de tolerâncias, ajustamentos, GD&T" },
+        { title: "Processos de Maquinagem CNC", description: "Torneamento, fresagem, furação; parâmetros de corte" },
+        { title: "Programação CNC — Código G", description: "Estrutura de programa, ciclos fixos, compensação de raio" },
+        { title: "CAM — Estratégias de Maquinagem", description: "Desbaste, acabamento, geração de trajetórias" },
+        { title: "Prototipagem Rápida / Impressão 3D", description: "FDM, SLA; parâmetros e limitações" },
+        { title: "Gestão de Assemblagens", description: "Restrições, graus de liberdade, análise de interferências" },
+        { title: "Simulação e Análise FEA", description: "Malha, condições de fronteira, interpretação de resultados" },
+        { title: "Superfícies NURBS e Modelação de Forma Livre", description: "Criação e edição de superfícies complexas" },
+        { title: "Folhas de Conjunto e Explosão", description: "Documentação técnica de montagem" },
+      ],
+    },
+    {
+      slug: "materiais-nao-metalicos",
+      name: "Materiais Não-Metálicos",
+      color: "#e8a838",
+      icon: "🧪",
+      examMatch: ["materiais", "nao-met", "nao met", "metalic"],
+      folders: [
+        { driveKey: "dna", folderId: "1SI0EOGa80hIn3yN356wbBQ_bGDx-vXCE", name: "Materiais Não-Metálicos" },
+        { driveKey: "neem", folderId: "1wNQj3juuabVnBAUJWoN0q-l5lyNUoQZA", name: "Materiais Não-Metálicos" },
+      ],
+      topics: [
+        { title: "Polímeros — Estrutura e Classificação", description: "Termoplásticos, termoendurecíveis, elastómeros; estrutura molecular" },
+        { title: "Propriedades Mecânicas dos Polímeros", description: "Viscoelasticidade, fluência, relaxação de tensões" },
+        { title: "Processamento de Polímeros", description: "Injeção, extrusão, sopro, termoformagem" },
+        { title: "Materiais Compósitos — Conceitos", description: "Matriz, reforço, interface; regra das misturas" },
+        { title: "Compósitos de Fibra", description: "Fibra de vidro, carbono, aramida; laminados" },
+        { title: "Cerâmicos — Estrutura e Propriedades", description: "Ligação iónica/covalente, fragilidade, dureza" },
+        { title: "Processamento de Cerâmicos", description: "Sinterização, prensagem, conformação por via húmida" },
+        { title: "Vidros", description: "Estrutura amorfa, transição vítrea, propriedades óticas" },
+        { title: "Ensaios e Caracterização", description: "Tração, dureza, impacto, análise térmica (DSC, TGA)" },
+        { title: "Degradação e Durabilidade", description: "Envelhecimento UV, hidrólise, resistência química" },
+        { title: "Seleção de Materiais", description: "Índices de desempenho, diagramas de Ashby" },
+        { title: "Materiais Avançados e Nanomateriais", description: "Grafeno, nanotubos, aplicações emergentes" },
+      ],
+    },
+    {
+      slug: "mecanica-dos-solidos",
+      name: "Mecânica dos Sólidos",
+      color: "#e05555",
+      icon: "🔩",
+      examMatch: ["mecanica", "solidos", "mec. solidos"],
+      folders: [
+        { driveKey: "dna", folderId: "12HjeiNmYndMX-AeecuVs2UFs5hj0D91p", name: "Mecânica dos Sólidos" },
+        {
+          driveKey: "neem",
+          folderId: "0B7xIfG8giVLkczZNd0tLVS1mQWc",
+          resourceKey: "0-AxrNs3rExQqNIMgxT7aiZg",
+          name: "Mecânica dos Sólidos",
+        },
+      ],
+      topics: [
+        { title: "Análise de Tensão — Estado Plano", description: "Tensor de tensões, critério de Mohr, tensões principais" },
+        { title: "Análise de Deformação", description: "Extensões, distorções, compatibilidade" },
+        { title: "Lei de Hooke Generalizada", description: "Relações tensão-deformação para materiais isotrópicos" },
+        { title: "Tração/Compressão e Estaticamente Indeterminado", description: "Método da força, sobreposição" },
+        { title: "Torção de Eixos Circulares", description: "Distribuição de tensões, ângulo de torção, eixos compostos" },
+        { title: "Flexão Pura e Composta", description: "Equação da linha elástica, momentos fletores e esforços transversos" },
+        { title: "Tensões de Corte em Flexão", description: "Distribuição parabólica, perfis abertos e fechados" },
+        { title: "Deformações em Vigas", description: "Integração da equação diferencial, método dos momentos de área" },
+        { title: "Critérios de Rotura e Cedência", description: "Von Mises, Tresca, Rankine; coeficiente de segurança" },
+        { title: "Encurvadura — Coluna de Euler", description: "Cargas críticas, comprimentos efetivos, imperfeições" },
+        { title: "Fadiga", description: "Curva S-N, critério de Goodman, concentração de tensões" },
+        { title: "Análise de Estruturas Reticuladas", description: "Método dos nós, método das secções" },
+      ],
+    },
   ],
 };
+
+export const MONTHS_PT = [
+  "jan", "fev", "mar", "abr", "mai", "jun",
+  "jul", "ago", "set", "out", "nov", "dez",
+];

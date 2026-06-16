@@ -1,7 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { screen, fireEvent } from "@testing-library/react";
 import NoteItem from "./NoteItem";
 import type { NoteRow } from "@/lib/supabase/types";
+import { renderWithConfig, subjectRow } from "@/test/renderWithConfig";
+
+const config = { subjects: [subjectRow()] };
+const render = (ui: React.ReactNode) => renderWithConfig(ui, config);
 
 function note(partial: Partial<NoteRow> = {}): NoteRow {
   return {

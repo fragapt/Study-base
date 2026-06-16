@@ -29,7 +29,11 @@ function isoInDays(n: number): string {
 }
 
 // Minimal chainable fake of the Supabase service client used by the cron route.
-function makeSupabase({ subs = [], sentExisting = false } = {}) {
+function makeSupabase({
+  subs = [] as unknown[],
+  settings = [{ user_id: "u1", exam_calendar_id: "cal@x" }] as unknown[],
+  sentExisting = false,
+} = {}) {
   const insertSpy = vi.fn(async () => ({ error: null }));
   const deleteEq = vi.fn(async () => ({ error: null }));
   const client = {
@@ -39,7 +43,9 @@ function makeSupabase({ subs = [], sentExisting = false } = {}) {
           const result =
             table === "push_subscriptions"
               ? { data: subs, error: null }
-              : { data: [], error: null };
+              : table === "app_settings"
+                ? { data: settings, error: null }
+                : { data: [], error: null };
           const chain: Record<string, unknown> = {
             eq() {
               return chain;

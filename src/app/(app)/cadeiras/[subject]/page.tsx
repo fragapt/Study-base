@@ -1,20 +1,19 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
-import { SUBJECT_BY_SLUG, SUBJECTS } from "@/lib/constants";
+import { loadUserConfig } from "@/lib/userConfig";
+import { subjectBySlug } from "@/lib/config/types";
 import SubjectTabs from "@/components/subject/SubjectTabs";
 
-export function generateStaticParams() {
-  return SUBJECTS.map((s) => ({ subject: s.slug }));
-}
-
+// Subjects are per-user, so this route is resolved dynamically (no static params).
 export default async function SubjectPage({
   params,
 }: {
   params: Promise<{ subject: string }>;
 }) {
   const { subject } = await params;
-  const def = SUBJECT_BY_SLUG[subject];
+  const config = await loadUserConfig();
+  const def = subjectBySlug(config, subject);
   if (!def) notFound();
 
   return (

@@ -4,8 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { HAS_SUPABASE } from "@/lib/env";
 
-// Tracks which checklist topics are done for a subject (keyed by topic title).
-export function useProgress(subjectSlug: string) {
+// Tracks which study topics are done for the current user, keyed by topic id
+// (topic_progress table). RLS scopes rows to the user, so we load them all.
+export function useProgress() {
   const [done, setDone] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const ready = HAS_SUPABASE;
@@ -19,44 +20,39 @@ export function useProgress(subjectSlug: string) {
     try {
       const supabase = createClient();
       const { data } = await supabase
-        .from("progress")
-        .select("topic_key, done")
-        .eq("subject_slug", subjectSlug);
+        .from("topic_progress")
+        .select("topic_id, done");
       const map: Record<string, boolean> = {};
-      (data ?? []).forEach((r: { topic_key: string; done: boolean }) => {
-        map[r.topic_key] = r.done;
+      (data ?? []).forEach((r: { topic_id: string; done: boolean }) => {
+        map[r.topic_id] = r.done;
       });
       setDone(map);
     } finally {
       setLoading(false);
     }
-  }, [subjectSlug]);
+  }, []);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  const toggle = useCallback(
-    async (topicKey: string, value: boolean) => {
-      setDone((prev) => ({ ...prev, [topicKey]: value }));
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-      await supabase.from("progress").upsert(
-        {
-          user_id: user.id,
-          subject_slug: subjectSlug,
-          topic_key: topicKey,
-          done: value,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,subject_slug,topic_key" },
-      );
-    },
-    [subjectSlug],
-  );
+  const toggle = useCallback(async (topicId: string, value: boolean) => {
+    setDone((prev) => ({ ...prev, [topicId]: value }));
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("topic_progress").upsert(
+      {
+        user_id: user.id,
+        topic_id: topicId,
+        done: value,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,topic_id" },
+    );
+  }, []);
 
   return { done, loading, ready, toggle };
 }

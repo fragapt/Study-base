@@ -1,11 +1,35 @@
 import { NextResponse } from "next/server";
 import { listCalendarEvents, isExam } from "@/lib/google";
-import { EXAM_CALENDAR_ID } from "@/lib/constants";
+import { createClient } from "@/lib/supabase/server";
+import { HAS_SUPABASE } from "@/lib/env";
+import type { AppSettingsRow } from "@/lib/supabase/types";
 import type { ExamDTO } from "@/lib/exam";
 
-// GET /api/calendar → upcoming exams (every event on the dedicated calendar).
+// GET /api/calendar → upcoming exams from the current user's configured calendar.
 export async function GET() {
-  const calendarId = process.env.EXAM_CALENDAR_ID || EXAM_CALENDAR_ID;
+  let calendarId: string | null = null;
+
+  if (HAS_SUPABASE) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("exam_calendar_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      calendarId = (data as Pick<AppSettingsRow, "exam_calendar_id"> | null)
+        ?.exam_calendar_id ?? null;
+    }
+  }
+  // Local-dev fallback when Supabase isn't configured.
+  if (!calendarId) calendarId = process.env.EXAM_CALENDAR_ID || null;
+
+  // No calendar configured → return an empty list (the UI shows "no exams").
+  if (!calendarId) return NextResponse.json({ exams: [] });
+
   try {
     const events = await listCalendarEvents(calendarId, {
       daysAhead: 220,

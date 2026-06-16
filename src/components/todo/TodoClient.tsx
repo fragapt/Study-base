@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useNotes } from "@/lib/useNotes";
-import { SUBJECTS } from "@/lib/constants";
+import { useConfig } from "@/lib/config/ConfigProvider";
 import NoteItem from "./NoteItem";
 
 export default function TodoClient({
@@ -12,6 +12,8 @@ export default function TodoClient({
 }) {
   const { notes, loading, error, ready, addNote, toggleDone, deleteNote } =
     useNotes();
+  const { config } = useConfig();
+  const subjects = config.subjects;
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -112,7 +114,7 @@ export default function TodoClient({
                   className="rounded-card border border-edge bg-app px-3 py-2 text-[13px] outline-none focus:border-accent"
                 >
                   <option value="">— Sem cadeira —</option>
-                  {SUBJECTS.map((s) => (
+                  {subjects.map((s) => (
                     <option key={s.slug} value={s.slug}>
                       {s.name}
                     </option>
@@ -142,7 +144,7 @@ export default function TodoClient({
             className="rounded-card border border-edge bg-card px-3 py-1.5 text-[13px] outline-none focus:border-accent"
           >
             <option value="">Todas as cadeiras</option>
-            {SUBJECTS.map((s) => (
+            {subjects.map((s) => (
               <option key={s.slug} value={s.slug}>
                 {s.name}
               </option>

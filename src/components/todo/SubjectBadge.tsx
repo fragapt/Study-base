@@ -1,8 +1,12 @@
-import { SUBJECT_BY_SLUG } from "@/lib/constants";
+"use client";
+
+import { useConfig } from "@/lib/config/ConfigProvider";
+import { subjectBySlug } from "@/lib/config/types";
 
 export default function SubjectBadge({ slug }: { slug: string | null }) {
+  const { config } = useConfig();
   if (!slug) return null;
-  const s = SUBJECT_BY_SLUG[slug];
+  const s = subjectBySlug(config, slug);
   if (!s) return null;
   return (
     <span

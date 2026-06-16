@@ -1,10 +1,20 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
+// Force the no-Supabase path so the route falls back to EXAM_CALENDAR_ID and
+// never touches the request-scoped Supabase client.
+vi.mock("@/lib/env", () => ({
+  HAS_SUPABASE: false,
+  SUPABASE_URL: "",
+  SUPABASE_ANON_KEY: "",
+}));
+
 import { GET } from "./route";
 
 // Integration: route + the real listCalendarEvents/isExam against a stubbed fetch.
 beforeEach(() => {
   vi.stubEnv("GOOGLE_API_KEY", "testkey");
+  vi.stubEnv("EXAM_CALENDAR_ID", "cal@group.calendar.google.com");
 });
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -43,6 +53,14 @@ describe("GET /api/calendar", () => {
     const timed = body.exams.find((e: { id: string }) => e.id === "c");
     expect(timed.allDay).toBe(false);
     expect(timed.location).toBe("Sala 1");
+  });
+
+  it("returns an empty list when no calendar is configured", async () => {
+    vi.stubEnv("EXAM_CALENDAR_ID", "");
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.exams).toEqual([]);
   });
 
   it("502s when the Calendar API returns an error", async () => {

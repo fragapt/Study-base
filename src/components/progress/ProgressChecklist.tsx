@@ -1,23 +1,19 @@
 "use client";
 
-import { useMemo } from "react";
-import { FALLBACK_TOPICS } from "@/lib/constants";
+import { useConfig } from "@/lib/config/ConfigProvider";
+import { topicsForSubject } from "@/lib/config/types";
 import { useProgress } from "@/lib/useProgress";
 
 export default function ProgressChecklist({
-  subjectName,
-  subjectSlug,
+  subjectId,
 }: {
-  subjectName: string;
-  subjectSlug: string;
+  subjectId: string;
 }) {
-  const topics = useMemo(
-    () => FALLBACK_TOPICS[subjectName] ?? [],
-    [subjectName],
-  );
-  const { done, loading, ready, toggle } = useProgress(subjectSlug);
+  const { config } = useConfig();
+  const topics = topicsForSubject(config, subjectId);
+  const { done, loading, ready, toggle } = useProgress();
 
-  const completed = topics.filter((t) => done[t.ti]).length;
+  const completed = topics.filter((t) => done[t.id]).length;
   const total = topics.length;
   const pct = total ? Math.round((completed / total) * 100) : 0;
 
@@ -33,7 +29,8 @@ export default function ProgressChecklist({
   if (total === 0) {
     return (
       <p className="text-[13px] text-muted">
-        Sem tópicos definidos para esta cadeira.
+        Sem tópicos definidos para esta cadeira. Adiciona-os em Configuração →
+        Tópicos de estudo.
       </p>
     );
   }
@@ -57,14 +54,14 @@ export default function ProgressChecklist({
 
       <div className="space-y-2">
         {topics.map((t) => {
-          const isDone = !!done[t.ti];
+          const isDone = !!done[t.id];
           return (
             <div
-              key={t.ti}
+              key={t.id}
               className="flex items-start gap-2.5 rounded-card border border-edge bg-card px-3 py-2.5"
             >
               <button
-                onClick={() => toggle(t.ti, !isDone)}
+                onClick={() => toggle(t.id, !isDone)}
                 disabled={loading}
                 aria-label={isDone ? "Marcar por fazer" : "Concluir"}
                 className={[
@@ -83,10 +80,12 @@ export default function ProgressChecklist({
                     isDone ? "text-muted line-through" : "",
                   ].join(" ")}
                 >
-                  {t.ti}
+                  {t.title}
                 </div>
-                {t.de ? (
-                  <div className="mt-0.5 text-[12px] text-muted">{t.de}</div>
+                {t.description ? (
+                  <div className="mt-0.5 text-[12px] text-muted">
+                    {t.description}
+                  </div>
                 ) : null}
               </div>
             </div>

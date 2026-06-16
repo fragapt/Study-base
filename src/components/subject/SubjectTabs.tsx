@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { SUBJECT_BY_SLUG } from "@/lib/constants";
+import { useConfig } from "@/lib/config/ConfigProvider";
+import { subjectBySlug } from "@/lib/config/types";
 import SubjectMaterials from "./SubjectMaterials";
 import SubjectExams from "./SubjectExams";
 import TodoClient from "@/components/todo/TodoClient";
@@ -17,7 +18,8 @@ const TABS: { key: Tab; label: string }[] = [
 ];
 
 export default function SubjectTabs({ slug }: { slug: string }) {
-  const subject = SUBJECT_BY_SLUG[slug];
+  const { config } = useConfig();
+  const subject = subjectBySlug(config, slug);
   const [tab, setTab] = useState<Tab>("materiais");
 
   if (!subject) return null;
@@ -42,14 +44,11 @@ export default function SubjectTabs({ slug }: { slug: string }) {
       </div>
 
       {tab === "materiais" ? (
-        <SubjectMaterials folders={subject.folders} />
+        <SubjectMaterials subjectId={subject.id} />
       ) : null}
       {tab === "notas" ? <TodoClient fixedSubject={subject.slug} /> : null}
       {tab === "progresso" ? (
-        <ProgressChecklist
-          subjectName={subject.name}
-          subjectSlug={subject.slug}
-        />
+        <ProgressChecklist subjectId={subject.id} />
       ) : null}
       {tab === "exames" ? <SubjectExams subject={subject} /> : null}
     </div>
