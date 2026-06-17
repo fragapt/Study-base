@@ -31,7 +31,7 @@ export default function TodayTodos() {
       <div className="mb-2.5 flex items-center justify-between">
         <h2 className="text-[13px] font-semibold text-muted">Tarefas em aberto</h2>
         <Link href="/todo" className="text-[12px] text-accent hover:underline">
-          Ver to-do →
+          Ver tarefas →
         </Link>
       </div>
       {loading ? (

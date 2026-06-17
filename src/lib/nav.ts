@@ -5,10 +5,10 @@ export interface NavItem {
 }
 
 export const NAV: NavItem[] = [
-  { href: "/", label: "Dashboard", icon: "🏠" },
+  { href: "/", label: "Painel", icon: "🏠" },
   { href: "/exames", label: "Exames", icon: "📅" },
   { href: "/drives", label: "Drives", icon: "📁" },
-  { href: "/todo", label: "To-do", icon: "✅" },
+  { href: "/todo", label: "Tarefas", icon: "✅" },
   { href: "/cadeiras", label: "Cadeiras", icon: "📚" },
   { href: "/progresso", label: "Progresso", icon: "📊" },
   { href: "/configuracao", label: "Configuração", icon: "🛠️" },

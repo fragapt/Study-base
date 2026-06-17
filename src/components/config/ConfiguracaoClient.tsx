@@ -2,6 +2,7 @@
 
 import ImportTemplate from "./ImportTemplate";
 import CalendarConfig from "./CalendarConfig";
+import AiConfig from "./AiConfig";
 import DrivesConfig from "./DrivesConfig";
 import SubjectsConfig from "./SubjectsConfig";
 import SubjectFolders from "./SubjectFolders";
@@ -36,8 +37,14 @@ export default function ConfiguracaoClient() {
         <CalendarConfig />
       </Section>
       <Section
-        title="Drives"
-        hint="Cola o link de partilha de uma pasta do Google Drive (extrai o ID e a resource key automaticamente)."
+        title="IA (opcional)"
+        hint="Credenciais IAedu (API key + channel ID) para gerar tarefas e percursos com IA na área de Progresso."
+      >
+        <AiConfig />
+      </Section>
+      <Section
+        title="Fontes (Drive + GitHub)"
+        hint="Cola um link de pasta do Google Drive ou um repositório do GitHub."
       >
         <DrivesConfig />
       </Section>

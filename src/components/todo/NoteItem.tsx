@@ -46,6 +46,14 @@ export default function NoteItem({
         ) : null}
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <SubjectBadge slug={note.subject_slug} />
+          {note.topic_id ? (
+            <span
+              title="Ligada a uma tarefa de estudo — estado sincronizado"
+              className="rounded bg-accentSoft px-1.5 py-0.5 text-[11px] font-medium text-accent"
+            >
+              🎯 estudo
+            </span>
+          ) : null}
           {note.due_date ? (
             <span
               className={[

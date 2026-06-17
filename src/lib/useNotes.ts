@@ -10,6 +10,7 @@ export interface NoteInput {
   description?: string | null;
   subject_slug?: string | null;
   due_date?: string | null;
+  topic_id?: string | null;
 }
 
 export function useNotes() {
@@ -60,6 +61,7 @@ export function useNotes() {
         description: input.description ?? null,
         subject_slug: input.subject_slug ?? null,
         due_date: input.due_date ?? null,
+        topic_id: input.topic_id ?? null,
       })
       .select("*")
       .single();

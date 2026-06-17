@@ -11,6 +11,9 @@ import type {
 
 export interface UserConfig {
   examCalendarId: string | null;
+  // Non-secret AI flags. The API key itself never reaches the client.
+  aiKeyPresent: boolean;
+  aiChannelId: string | null;
   drives: DriveRow[];
   subjects: SubjectRow[];
   subjectFolders: SubjectFolderRow[];
@@ -19,6 +22,8 @@ export interface UserConfig {
 
 export const EMPTY_CONFIG: UserConfig = {
   examCalendarId: null,
+  aiKeyPresent: false,
+  aiChannelId: null,
   drives: [],
   subjects: [],
   subjectFolders: [],

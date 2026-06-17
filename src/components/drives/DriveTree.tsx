@@ -1,30 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { DriveFile, fileIcon, effectiveMime } from "@/lib/files";
 import {
-  DriveFile,
-  fileIcon,
-  effectiveMime,
-  folderTarget,
-  openInDriveUrl,
-} from "@/lib/files";
-
-async function fetchFolder(
-  folderId: string,
-  resourceKey?: string,
-): Promise<DriveFile[]> {
-  const qs = new URLSearchParams({ folderId });
-  if (resourceKey) qs.set("resourceKey", resourceKey);
-  const res = await fetch(`/api/drive?${qs}`);
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Erro ao carregar a pasta");
-  return (data.files as DriveFile[]) ?? [];
-}
+  SourceRoot,
+  fetchChildren,
+  nodeChildrenRoot,
+  externalUrl,
+} from "@/lib/sourceTree";
 
 function sortFiles(files: DriveFile[]) {
   return [...files].sort((a, b) => {
-    const af = Boolean(folderTarget(a));
-    const bf = Boolean(folderTarget(b));
+    const af = Boolean(nodeChildrenRoot(a));
+    const bf = Boolean(nodeChildrenRoot(b));
     if (af !== bf) return af ? -1 : 1;
     return a.name.localeCompare(b.name, "pt");
   });
@@ -42,19 +30,19 @@ function TreeNode({ file, depth, selectedId, onSelect }: NodeProps) {
   const [kids, setKids] = useState<DriveFile[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const target = folderTarget(file);
-  const dir = Boolean(target);
+  const childRoot = nodeChildrenRoot(file);
+  const dir = Boolean(childRoot);
   const pad = 8 + depth * 16;
 
   async function toggle() {
-    if (target) {
+    if (childRoot) {
       const next = !open;
       setOpen(next);
       if (next && kids === null && !loading) {
         setLoading(true);
         setError(null);
         try {
-          setKids(await fetchFolder(target.id, target.resourceKey));
+          setKids(await fetchChildren(childRoot));
         } catch (e) {
           setError(e instanceof Error ? e.message : "Erro");
         } finally {
@@ -90,7 +78,7 @@ function TreeNode({ file, depth, selectedId, onSelect }: NodeProps) {
         <span className="shrink-0 text-[14px]">{fileIcon(effectiveMime(file))}</span>
         <span className="flex-1 truncate">{file.name}</span>
         <a
-          href={openInDriveUrl(file)}
+          href={externalUrl(file)}
           target="_blank"
           rel="noreferrer"
           onClick={(e) => e.stopPropagation()}
@@ -133,13 +121,11 @@ function TreeNode({ file, depth, selectedId, onSelect }: NodeProps) {
 }
 
 export default function DriveTree({
-  rootFolderId,
-  rootResourceKey,
+  root,
   selectedId,
   onSelect,
 }: {
-  rootFolderId: string;
-  rootResourceKey?: string;
+  root: SourceRoot;
   selectedId?: string;
   onSelect: (file: DriveFile) => void;
 }) {
@@ -151,13 +137,14 @@ export default function DriveTree({
     setLoading(true);
     setError(null);
     try {
-      setFiles(await fetchFolder(rootFolderId, rootResourceKey));
+      setFiles(await fetchChildren(root));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro");
     } finally {
       setLoading(false);
     }
-  }, [rootFolderId, rootResourceKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [root.provider, root.folderId, root.resourceKey, root.repoFull, root.gitRef, root.path]);
 
   useEffect(() => {
     load();

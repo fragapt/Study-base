@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useConfig } from "@/lib/config/ConfigProvider";
 import { addDrive, deleteDrive } from "@/lib/config/mutations";
 import { parseDriveFolderLink } from "@/lib/files";
+import { parseGithubRepoLink, looksLikeGithub } from "@/lib/githubLink";
 
 export default function DrivesConfig() {
   const { config, reload } = useConfig();
@@ -14,16 +15,47 @@ export default function DrivesConfig() {
   const [error, setError] = useState<string | null>(null);
 
   async function add() {
+    setError(null);
+
+    // GitHub repository?
+    if (looksLikeGithub(link)) {
+      const gh = parseGithubRepoLink(link);
+      if (!gh) {
+        setError("Link de GitHub inválido.");
+        return;
+      }
+      setBusy(true);
+      try {
+        await addDrive({
+          name: name.trim() || gh.repoFull.split("/")[1],
+          provider: "github",
+          folder_id: gh.path ?? "",
+          repo_full: gh.repoFull,
+          git_ref: gh.ref ?? null,
+          color,
+        });
+        await reload();
+        setName("");
+        setLink("");
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Erro ao adicionar");
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+
+    // Google Drive folder
     const parsed = parseDriveFolderLink(link);
     if (!name.trim() || !parsed) {
-      setError("Indica um nome e um link/ID de pasta válido.");
+      setError("Indica um nome e um link/ID de pasta (Drive) ou um link de GitHub.");
       return;
     }
     setBusy(true);
-    setError(null);
     try {
       await addDrive({
         name: name.trim(),
+        provider: "drive",
         folder_id: parsed.folderId,
         resource_key: parsed.resourceKey ?? null,
         color,
@@ -56,10 +88,12 @@ export default function DrivesConfig() {
                 className="h-2.5 w-2.5 shrink-0 rounded-full"
                 style={{ background: d.color }}
               />
+              <span className="shrink-0">{d.provider === "github" ? "🐙" : "📁"}</span>
               <span className="font-medium">{d.name}</span>
               <span className="truncate text-[11px] text-muted">
-                {d.folder_id}
-                {d.resource_key ? " · rk" : ""}
+                {d.provider === "github"
+                  ? `${d.repo_full}${d.git_ref ? `@${d.git_ref}` : ""}`
+                  : `${d.folder_id}${d.resource_key ? " · rk" : ""}`}
               </span>
               <button
                 onClick={() => remove(d.id)}
@@ -84,7 +118,7 @@ export default function DrivesConfig() {
         <input
           value={link}
           onChange={(e) => setLink(e.target.value)}
-          placeholder="Link de partilha da pasta ou ID"
+          placeholder="Link de pasta do Drive ou repositório do GitHub"
           className="min-w-[200px] flex-1 rounded-card border border-edge bg-app px-3 py-2 text-[13px] outline-none focus:border-accent"
         />
         <input

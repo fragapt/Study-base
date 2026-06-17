@@ -27,12 +27,23 @@ export async function loadUserConfig(): Promise<UserConfig> {
     supabase.from("subjects").select("*").order("position", { ascending: true }),
     supabase.from("subject_folders").select("*"),
     supabase.from("progress_topics").select("*").order("position", { ascending: true }),
-    supabase.from("app_settings").select("*").eq("user_id", user.id).maybeSingle(),
+    // Never select ai_api_key here — it must not reach the browser.
+    supabase
+      .from("app_settings")
+      .select("exam_calendar_id, ai_channel_id, ai_key_present")
+      .eq("user_id", user.id)
+      .maybeSingle(),
   ]);
 
+  const s = settings.data as Pick<
+    AppSettingsRow,
+    "exam_calendar_id" | "ai_channel_id" | "ai_key_present"
+  > | null;
+
   return {
-    examCalendarId:
-      (settings.data as AppSettingsRow | null)?.exam_calendar_id ?? null,
+    examCalendarId: s?.exam_calendar_id ?? null,
+    aiKeyPresent: s?.ai_key_present ?? false,
+    aiChannelId: s?.ai_channel_id ?? null,
     drives: (drives.data as DriveRow[] | null) ?? [],
     subjects: (subjects.data as SubjectRow[] | null) ?? [],
     subjectFolders: (subjectFolders.data as SubjectFolderRow[] | null) ?? [],

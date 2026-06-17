@@ -27,6 +27,8 @@ export function topicRow(partial: Partial<ProgressTopicRow> = {}): ProgressTopic
     description: null,
     position: 0,
     created_at: "",
+    source: "manual",
+    kind: "task",
     ...partial,
   };
 }

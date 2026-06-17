@@ -1,4 +1,7 @@
-// Client-safe helpers for Drive file display (no server imports).
+// Client-safe helpers for source file display (no server imports). A "file" may
+// come from Google Drive (default) or a GitHub repository.
+
+export type Provider = "drive" | "github";
 
 export interface DriveFile {
   id: string;
@@ -14,10 +17,48 @@ export interface DriveFile {
     targetMimeType?: string;
     targetResourceKey?: string;
   };
+  // Provider tagging. Absent ⇒ "drive".
+  provider?: Provider;
+  // GitHub-only fields.
+  repoFull?: string;
+  gitRef?: string;
+  path?: string;
+  downloadUrl?: string;
+  htmlUrl?: string;
 }
 
-const FOLDER_MIME = "application/vnd.google-apps.folder";
+export const FOLDER_MIME = "application/vnd.google-apps.folder";
 const SHORTCUT_MIME = "application/vnd.google-apps.shortcut";
+
+// Synthetic MIME type from a file name (used for GitHub entries so the existing
+// icon/preview logic keeps working).
+export function mimeFromName(name: string): string {
+  const ext = name.toLowerCase().split(".").pop() ?? "";
+  if (["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp"].includes(ext))
+    return `image/${ext === "jpg" ? "jpeg" : ext}`;
+  if (ext === "pdf") return "application/pdf";
+  if (["md", "markdown"].includes(ext)) return "text/markdown";
+  if (["txt", "rst", "csv", "log"].includes(ext)) return "text/plain";
+  if (
+    [
+      "js", "jsx", "ts", "tsx", "py", "java", "c", "h", "cpp", "cc", "cs", "go",
+      "rs", "rb", "php", "swift", "kt", "scala", "sh", "bash", "json", "yaml",
+      "yml", "toml", "ini", "xml", "html", "css", "scss", "sql", "tex", "m",
+      "r", "jl", "lua", "dart", "vue", "svelte",
+    ].includes(ext)
+  )
+    return "text/x-code";
+  return "application/octet-stream";
+}
+
+// Whether a file's text can be rendered inline in the preview pane.
+export function isTextPreviewable(mimeType: string): boolean {
+  return (
+    mimeType.startsWith("text/") ||
+    mimeType === "application/json" ||
+    mimeType === "application/xml"
+  );
+}
 
 export function isFolder(mimeType: string) {
   return mimeType === FOLDER_MIME;

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useConfig } from "@/lib/config/ConfigProvider";
+import { usePersistedState } from "@/lib/usePersistedState";
 import { subjectBySlug } from "@/lib/config/types";
 import SubjectMaterials from "./SubjectMaterials";
 import SubjectExams from "./SubjectExams";
@@ -20,7 +20,7 @@ const TABS: { key: Tab; label: string }[] = [
 export default function SubjectTabs({ slug }: { slug: string }) {
   const { config } = useConfig();
   const subject = subjectBySlug(config, slug);
-  const [tab, setTab] = useState<Tab>("materiais");
+  const [tab, setTab] = usePersistedState<Tab>("bde.cadeira.tab", "materiais");
 
   if (!subject) return null;
 

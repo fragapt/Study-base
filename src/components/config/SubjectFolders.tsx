@@ -9,44 +9,36 @@ import {
 } from "@/lib/config/types";
 import { addSubjectFolder, deleteSubjectFolder } from "@/lib/config/mutations";
 import { suggestFolders, type ScannedFolder } from "@/lib/match";
-import { DriveFile, folderTarget } from "@/lib/files";
+import {
+  fetchChildren,
+  nodeChildrenRoot,
+  folderLocator,
+  rootFromDrive,
+} from "@/lib/sourceTree";
 import FolderPicker from "./FolderPicker";
 
-async function listFolder(
-  folderId: string,
-  resourceKey?: string,
-): Promise<DriveFile[]> {
-  const qs = new URLSearchParams({ folderId });
-  if (resourceKey) qs.set("resourceKey", resourceKey);
-  const res = await fetch(`/api/drive?${qs}`);
-  if (!res.ok) return [];
-  const data = await res.json();
-  return (data.files as DriveFile[]) ?? [];
-}
-
-// Scans each drive's root + one level deep, returning candidate folders.
-async function scanDrives(config: UserConfig): Promise<ScannedFolder[]> {
+// Scans each source (Drive folder / GitHub repo) root + one level deep,
+// returning candidate folders for auto-matching.
+async function scanSources(config: UserConfig): Promise<ScannedFolder[]> {
   const out: ScannedFolder[] = [];
   for (const d of config.drives) {
-    const top = await listFolder(d.folder_id, d.resource_key ?? undefined);
-    const topFolders = top.filter((f) => folderTarget(f));
+    let top;
+    try {
+      top = await fetchChildren(rootFromDrive(d));
+    } catch {
+      continue;
+    }
+    const topFolders = top.filter((f) => nodeChildrenRoot(f));
     for (const f of topFolders) {
-      const tgt = folderTarget(f)!;
-      out.push({
-        driveId: d.id,
-        folderId: tgt.id,
-        resourceKey: tgt.resourceKey,
-        name: f.name,
-      });
-      const sub = await listFolder(tgt.id, tgt.resourceKey);
-      for (const g of sub.filter((x) => folderTarget(x))) {
-        const gt = folderTarget(g)!;
-        out.push({
-          driveId: d.id,
-          folderId: gt.id,
-          resourceKey: gt.resourceKey,
-          name: g.name,
-        });
+      const loc = folderLocator(f)!;
+      out.push({ driveId: d.id, ...loc, name: f.name });
+      try {
+        const sub = await fetchChildren(nodeChildrenRoot(f)!);
+        for (const g of sub.filter((x) => nodeChildrenRoot(x))) {
+          out.push({ driveId: d.id, ...folderLocator(g)!, name: g.name });
+        }
+      } catch {
+        // ignore a folder we can't descend
       }
     }
   }
@@ -62,13 +54,13 @@ export default function SubjectFolders() {
 
   async function autoDetect() {
     if (config.drives.length === 0 || config.subjects.length === 0) {
-      setStatus("Precisas de drives e cadeiras primeiro.");
+      setStatus("Precisas de fontes e cadeiras primeiro.");
       return;
     }
     setScanning(true);
-    setStatus("A analisar as drives…");
+    setStatus("A analisar as fontes…");
     try {
-      const scanned = await scanDrives(config);
+      const scanned = await scanSources(config);
       const suggestions = suggestFolders(scanned, config.subjects);
       let added = 0;
       for (const s of suggestions) {
@@ -79,8 +71,11 @@ export default function SubjectFolders() {
         await addSubjectFolder({
           subject_id: s.subjectId,
           drive_id: s.driveId,
+          provider: s.provider,
           folder_id: s.folderId,
           resource_key: s.resourceKey ?? null,
+          repo_full: s.repoFull ?? null,
+          git_ref: s.gitRef ?? null,
           name: s.name,
           source: "auto",
         });
@@ -126,10 +121,7 @@ export default function SubjectFolders() {
         const openPicker = pickerFor === s.id;
         const drive = config.drives.find((d) => d.id === pickDrive);
         return (
-          <div
-            key={s.id}
-            className="rounded-card border border-edge bg-app p-3"
-          >
+          <div key={s.id} className="rounded-card border border-edge bg-app p-3">
             <div className="mb-2 flex items-center gap-2 text-[13px] font-semibold">
               <span>{s.icon}</span> {s.name}
             </div>
@@ -139,11 +131,8 @@ export default function SubjectFolders() {
                 {attached.map((f) => {
                   const d = driveById(config, f.drive_id);
                   return (
-                    <li
-                      key={f.id}
-                      className="flex items-center gap-2 text-[12.5px]"
-                    >
-                      <span>📁</span>
+                    <li key={f.id} className="flex items-center gap-2 text-[12.5px]">
+                      <span>{f.provider === "github" ? "🐙" : "📁"}</span>
                       <span className="truncate">{f.name ?? f.folder_id}</span>
                       {d ? (
                         <span className="text-[11px] text-muted">· {d.name}</span>
@@ -175,7 +164,7 @@ export default function SubjectFolders() {
                     onChange={(e) => setPickDrive(e.target.value)}
                     className="rounded-card border border-edge bg-app px-3 py-1.5 text-[13px] outline-none focus:border-accent"
                   >
-                    <option value="">— Escolhe uma drive —</option>
+                    <option value="">— Escolhe uma fonte —</option>
                     {config.drives.map((d) => (
                       <option key={d.id} value={d.id}>
                         {d.name}
@@ -185,14 +174,16 @@ export default function SubjectFolders() {
                   {drive ? (
                     <FolderPicker
                       rootName={drive.name}
-                      rootFolderId={drive.folder_id}
-                      rootResourceKey={drive.resource_key ?? undefined}
+                      root={rootFromDrive(drive)}
                       onAttach={async (folder) => {
                         await addSubjectFolder({
                           subject_id: s.id,
                           drive_id: drive.id,
+                          provider: folder.provider,
                           folder_id: folder.folderId,
                           resource_key: folder.resourceKey ?? null,
+                          repo_full: folder.repoFull ?? null,
+                          git_ref: folder.gitRef ?? null,
                           name: folder.name,
                           source: "manual",
                         });

@@ -53,8 +53,8 @@ describe("folderMatchesSubject", () => {
 describe("suggestFolders", () => {
   it("emits a suggestion per matching (folder, subject)", () => {
     const folders: ScannedFolder[] = [
-      { driveId: "d1", folderId: "f1", name: "Eletricidade" },
-      { driveId: "d1", folderId: "f2", name: "Cálculo" },
+      { driveId: "d1", provider: "drive", folderId: "f1", name: "Eletricidade" },
+      { driveId: "d1", provider: "drive", folderId: "f2", name: "Cálculo" },
     ];
     const subjects = [
       subject({ id: "s1", name: "Eletricidade" }),

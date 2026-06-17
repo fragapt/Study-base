@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useNotes } from "@/lib/useNotes";
 import { useConfig } from "@/lib/config/ConfigProvider";
+import { usePersistedState } from "@/lib/usePersistedState";
 import NoteItem from "./NoteItem";
 
 export default function TodoClient({
@@ -23,8 +24,14 @@ export default function TodoClient({
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const [filterSubject, setFilterSubject] = useState("");
-  const [showDone, setShowDone] = useState(false);
+  const [filterSubject, setFilterSubject] = usePersistedState<string>(
+    "bde.todo.filterSubject",
+    "",
+  );
+  const [showDone, setShowDone] = usePersistedState<boolean>(
+    "bde.todo.showDone",
+    false,
+  );
 
   const visible = useMemo(() => {
     return notes.filter((n) => {

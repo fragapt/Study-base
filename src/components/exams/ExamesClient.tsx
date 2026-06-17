@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useExams } from "@/lib/useExams";
+import { usePersistedState } from "@/lib/usePersistedState";
 import { daysUntil } from "@/lib/dates";
 import { MONTHS_PT } from "@/lib/constants";
 import ExamCard from "./ExamCard";
@@ -11,7 +12,7 @@ type View = "lista" | "mes";
 
 export default function ExamesClient() {
   const { exams, loading, error } = useExams();
-  const [view, setView] = useState<View>("lista");
+  const [view, setView] = usePersistedState<View>("bde.exames.view", "lista");
 
   const upcoming = useMemo(
     () =>

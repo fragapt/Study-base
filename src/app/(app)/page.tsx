@@ -10,7 +10,7 @@ export default async function DashboardPage() {
   return (
     <div className="mx-auto max-w-4xl">
       <PageHeader
-        title="Dashboard"
+        title="Painel"
         subtitle="Próximo exame, tarefas de hoje e atalhos para as tuas drives."
       />
 

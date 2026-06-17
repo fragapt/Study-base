@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useConfig } from "@/lib/config/ConfigProvider";
 import { driveById, foldersForSubject } from "@/lib/config/types";
 import { DriveFile } from "@/lib/files";
+import { rootFromSubjectFolder } from "@/lib/sourceTree";
 import DriveTree from "@/components/drives/DriveTree";
 import FilePreview from "@/components/drives/FilePreview";
 
@@ -47,8 +48,7 @@ export default function SubjectMaterials({ subjectId }: { subjectId: string }) {
               </div>
               <div className="py-1">
                 <DriveTree
-                  rootFolderId={f.folder_id}
-                  rootResourceKey={f.resource_key ?? undefined}
+                  root={rootFromSubjectFolder(f)}
                   selectedId={selected?.id}
                   onSelect={setSelected}
                 />

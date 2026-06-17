@@ -17,6 +17,7 @@ export type Database = {
           due_date: string | null;
           position: number;
           created_at: string;
+          topic_id: string | null;
         };
         Insert: {
           id?: string;
@@ -28,6 +29,7 @@ export type Database = {
           due_date?: string | null;
           position?: number;
           created_at?: string;
+          topic_id?: string | null;
         };
         Update: {
           id?: string;
@@ -39,6 +41,7 @@ export type Database = {
           due_date?: string | null;
           position?: number;
           created_at?: string;
+          topic_id?: string | null;
         };
         Relationships: [];
       };
@@ -47,16 +50,28 @@ export type Database = {
           user_id: string;
           exam_calendar_id: string | null;
           updated_at: string;
+          ai_api_key: string | null;
+          ai_model: string | null;
+          ai_channel_id: string | null;
+          ai_key_present: boolean;
         };
         Insert: {
           user_id: string;
           exam_calendar_id?: string | null;
           updated_at?: string;
+          ai_api_key?: string | null;
+          ai_model?: string | null;
+          ai_channel_id?: string | null;
+          ai_key_present?: boolean;
         };
         Update: {
           user_id?: string;
           exam_calendar_id?: string | null;
           updated_at?: string;
+          ai_api_key?: string | null;
+          ai_model?: string | null;
+          ai_channel_id?: string | null;
+          ai_key_present?: boolean;
         };
         Relationships: [];
       };
@@ -70,6 +85,9 @@ export type Database = {
           color: string;
           position: number;
           created_at: string;
+          provider: string;
+          repo_full: string | null;
+          git_ref: string | null;
         };
         Insert: {
           id?: string;
@@ -80,6 +98,9 @@ export type Database = {
           color?: string;
           position?: number;
           created_at?: string;
+          provider?: string;
+          repo_full?: string | null;
+          git_ref?: string | null;
         };
         Update: {
           id?: string;
@@ -90,6 +111,9 @@ export type Database = {
           color?: string;
           position?: number;
           created_at?: string;
+          provider?: string;
+          repo_full?: string | null;
+          git_ref?: string | null;
         };
         Relationships: [];
       };
@@ -140,6 +164,9 @@ export type Database = {
           name: string | null;
           source: string;
           created_at: string;
+          provider: string;
+          repo_full: string | null;
+          git_ref: string | null;
         };
         Insert: {
           id?: string;
@@ -151,6 +178,9 @@ export type Database = {
           name?: string | null;
           source?: string;
           created_at?: string;
+          provider?: string;
+          repo_full?: string | null;
+          git_ref?: string | null;
         };
         Update: {
           id?: string;
@@ -162,6 +192,9 @@ export type Database = {
           name?: string | null;
           source?: string;
           created_at?: string;
+          provider?: string;
+          repo_full?: string | null;
+          git_ref?: string | null;
         };
         Relationships: [];
       };
@@ -174,6 +207,8 @@ export type Database = {
           description: string | null;
           position: number;
           created_at: string;
+          source: string;
+          kind: string;
         };
         Insert: {
           id?: string;
@@ -183,6 +218,8 @@ export type Database = {
           description?: string | null;
           position?: number;
           created_at?: string;
+          source?: string;
+          kind?: string;
         };
         Update: {
           id?: string;
@@ -192,6 +229,8 @@ export type Database = {
           description?: string | null;
           position?: number;
           created_at?: string;
+          source?: string;
+          kind?: string;
         };
         Relationships: [];
       };

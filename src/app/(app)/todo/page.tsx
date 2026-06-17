@@ -5,7 +5,7 @@ export default function TodoPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <PageHeader
-        title="To-do"
+        title="Tarefas"
         subtitle="Tarefas com título, descrição e cadeira — sincronizadas entre dispositivos."
       />
       <TodoClient />

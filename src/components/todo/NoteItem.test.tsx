@@ -18,6 +18,7 @@ function note(partial: Partial<NoteRow> = {}): NoteRow {
     due_date: null,
     position: 0,
     created_at: new Date().toISOString(),
+    topic_id: null,
     ...partial,
   };
 }

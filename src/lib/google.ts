@@ -76,6 +76,34 @@ export async function listDriveFolder(
   return data.files ?? [];
 }
 
+// Downloads a public Drive file's raw bytes (alt=media). Returns null on error.
+export async function fetchDriveMedia(
+  fileId: string,
+  resourceKey?: string,
+): Promise<{ buf: ArrayBuffer; contentType: string } | null> {
+  const params = new URLSearchParams({
+    key: apiKey(),
+    alt: "media",
+    supportsAllDrives: "true",
+  });
+  const headers: Record<string, string> = {};
+  if (resourceKey) headers["X-Goog-Drive-Resource-Keys"] = `${fileId}/${resourceKey}`;
+  const res = await fetch(`${DRIVE_ENDPOINT}/${fileId}?${params}`, { headers });
+  if (!res.ok) return null;
+  return { buf: await res.arrayBuffer(), contentType: res.headers.get("content-type") ?? "" };
+}
+
+// Exports a public Google Doc as plain text. Returns null on error.
+export async function exportGoogleDoc(
+  fileId: string,
+  mimeType = "text/plain",
+): Promise<string | null> {
+  const params = new URLSearchParams({ key: apiKey(), mimeType });
+  const res = await fetch(`${DRIVE_ENDPOINT}/${fileId}/export?${params}`);
+  if (!res.ok) return null;
+  return res.text();
+}
+
 export interface CalendarEvent {
   id: string;
   summary: string;

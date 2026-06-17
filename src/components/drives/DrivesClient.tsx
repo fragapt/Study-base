@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useConfig } from "@/lib/config/ConfigProvider";
+import { usePersistedState } from "@/lib/usePersistedState";
 import { DriveFile } from "@/lib/files";
+import { rootFromDrive } from "@/lib/sourceTree";
 import DriveTree from "./DriveTree";
 import FilePreview from "./FilePreview";
 
@@ -12,12 +14,16 @@ export default function DrivesClient() {
   const { config } = useConfig();
   const drives = config.drives;
   const params = useSearchParams();
-  const initial = params.get("drive");
-  const [open, setOpen] = useState<string | null>(
-    initial && drives.some((d) => d.id === initial)
-      ? initial
-      : (drives[0]?.id ?? null),
+  const param = params.get("drive");
+  const [open, setOpen] = usePersistedState<string | null>(
+    "bde.drives.open",
+    drives[0]?.id ?? null,
   );
+  // A ?drive= link (e.g. from the dashboard) takes priority on navigation.
+  useEffect(() => {
+    if (param && drives.some((d) => d.id === param)) setOpen(param);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [param]);
   const [selected, setSelected] = useState<DriveFile | null>(null);
 
   if (drives.length === 0) {
@@ -64,8 +70,7 @@ export default function DrivesClient() {
               {isOpen ? (
                 <div className="border-t border-edge2 py-1">
                   <DriveTree
-                    rootFolderId={d.folder_id}
-                    rootResourceKey={d.resource_key ?? undefined}
+                    root={rootFromDrive(d)}
                     selectedId={selected?.id}
                     onSelect={setSelected}
                   />

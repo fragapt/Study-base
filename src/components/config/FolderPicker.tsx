@@ -1,47 +1,39 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { DriveFile, folderTarget } from "@/lib/files";
+import { DriveFile } from "@/lib/files";
+import {
+  SourceRoot,
+  FolderLocator,
+  fetchChildren,
+  nodeChildrenRoot,
+  folderLocator,
+  rootLocator,
+} from "@/lib/sourceTree";
 
-interface Crumb {
-  id: string;
-  resourceKey?: string;
+export interface AttachFolder extends FolderLocator {
   name: string;
 }
 
-async function listFolder(
-  folderId: string,
-  resourceKey?: string,
-): Promise<DriveFile[]> {
-  const qs = new URLSearchParams({ folderId });
-  if (resourceKey) qs.set("resourceKey", resourceKey);
-  const res = await fetch(`/api/drive?${qs}`);
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Erro ao carregar a pasta");
-  return (data.files as DriveFile[]) ?? [];
+interface Crumb {
+  root: SourceRoot;
+  name: string;
 }
 
-// Browses one drive's folders, letting the user descend and attach a folder.
+// Browses a source (Drive folder or GitHub repo), letting the user descend and
+// attach a folder.
 export default function FolderPicker({
   rootName,
-  rootFolderId,
-  rootResourceKey,
+  root,
   onAttach,
   onClose,
 }: {
   rootName: string;
-  rootFolderId: string;
-  rootResourceKey?: string;
-  onAttach: (folder: {
-    folderId: string;
-    resourceKey?: string;
-    name: string;
-  }) => void;
+  root: SourceRoot;
+  onAttach: (folder: AttachFolder) => void;
   onClose: () => void;
 }) {
-  const [stack, setStack] = useState<Crumb[]>([
-    { id: rootFolderId, resourceKey: rootResourceKey, name: rootName },
-  ]);
+  const [stack, setStack] = useState<Crumb[]>([{ root, name: rootName }]);
   const [items, setItems] = useState<DriveFile[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,14 +44,15 @@ export default function FolderPicker({
     setLoading(true);
     setError(null);
     try {
-      const files = await listFolder(current.id, current.resourceKey);
-      setItems(files.filter((f) => folderTarget(f)));
+      const files = await fetchChildren(current.root);
+      setItems(files.filter((f) => nodeChildrenRoot(f)));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro");
     } finally {
       setLoading(false);
     }
-  }, [current.id, current.resourceKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current.root.provider, current.root.folderId, current.root.resourceKey, current.root.repoFull, current.root.gitRef, current.root.path]);
 
   useEffect(() => {
     load();
@@ -94,11 +87,7 @@ export default function FolderPicker({
         </span>
         <button
           onClick={() =>
-            onAttach({
-              folderId: current.id,
-              resourceKey: current.resourceKey,
-              name: current.name,
-            })
+            onAttach({ ...rootLocator(current.root), name: current.name })
           }
           className="rounded-card bg-accent px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-[#1a6dc0]"
         >
@@ -114,40 +103,28 @@ export default function FolderPicker({
         ) : items && items.length === 0 ? (
           <p className="py-2 text-[12px] italic text-muted">Sem subpastas.</p>
         ) : (
-          items?.map((f) => {
-            const tgt = folderTarget(f)!;
-            return (
-              <div
-                key={f.id}
-                className="flex items-center gap-2 py-1 text-[13px]"
+          items?.map((f) => (
+            <div key={f.id} className="flex items-center gap-2 py-1 text-[13px]">
+              <button
+                onClick={() =>
+                  setStack((s) => [
+                    ...s,
+                    { root: nodeChildrenRoot(f)!, name: f.name },
+                  ])
+                }
+                className="flex flex-1 items-center gap-1.5 truncate text-left hover:text-accent"
               >
-                <button
-                  onClick={() =>
-                    setStack((s) => [
-                      ...s,
-                      { id: tgt.id, resourceKey: tgt.resourceKey, name: f.name },
-                    ])
-                  }
-                  className="flex flex-1 items-center gap-1.5 truncate text-left hover:text-accent"
-                >
-                  <span>📁</span>
-                  <span className="truncate">{f.name}</span>
-                </button>
-                <button
-                  onClick={() =>
-                    onAttach({
-                      folderId: tgt.id,
-                      resourceKey: tgt.resourceKey,
-                      name: f.name,
-                    })
-                  }
-                  className="shrink-0 rounded px-2 py-0.5 text-[11px] text-accent hover:bg-accentSoft"
-                >
-                  Anexar
-                </button>
-              </div>
-            );
-          })
+                <span>📁</span>
+                <span className="truncate">{f.name}</span>
+              </button>
+              <button
+                onClick={() => onAttach({ ...folderLocator(f)!, name: f.name })}
+                className="shrink-0 rounded px-2 py-0.5 text-[11px] text-accent hover:bg-accentSoft"
+              >
+                Anexar
+              </button>
+            </div>
+          ))
         )}
       </div>
     </div>

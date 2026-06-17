@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useConfig } from "@/lib/config/ConfigProvider";
+import { usePersistedState } from "@/lib/usePersistedState";
 import ProgressChecklist from "./ProgressChecklist";
 
 export default function ProgressoClient() {
   const { config } = useConfig();
   const subjects = config.subjects;
-  const [slug, setSlug] = useState(subjects[0]?.slug ?? "");
+  const [slug, setSlug] = usePersistedState<string>(
+    "bde.progresso.subject",
+    subjects[0]?.slug ?? "",
+  );
   const subject = subjects.find((s) => s.slug === slug) ?? subjects[0];
 
   if (subjects.length === 0) {

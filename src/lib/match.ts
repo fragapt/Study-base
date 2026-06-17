@@ -5,8 +5,11 @@ import type { SubjectRow } from "@/lib/supabase/types";
 
 export interface ScannedFolder {
   driveId: string;
+  provider: "drive" | "github";
   folderId: string;
   resourceKey?: string;
+  repoFull?: string;
+  gitRef?: string;
   name: string;
 }
 
