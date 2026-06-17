@@ -1,12 +1,24 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Sparkles } from "lucide-react";
 import { useConfig } from "@/lib/config/ConfigProvider";
 import { topicsForSubject } from "@/lib/config/types";
 import { useProgress } from "@/lib/useProgress";
 import { createClient } from "@/lib/supabase/client";
 import { HAS_SUPABASE } from "@/lib/env";
 import { copyMilestoneToTodo } from "@/lib/config/mutations";
+import GenerateDialog from "@/components/study/GenerateDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 import type { ProgressTopicRow } from "@/lib/supabase/types";
 
 type Mode = "tasks" | "milestones";
@@ -29,12 +41,28 @@ interface SectionProps {
   allowTodo?: boolean;
   linked?: Set<string>;
   onCopyTodo?: (t: ProgressTopicRow) => void;
+  // generate study content from a single topic
+  onGenerateContent?: (t: ProgressTopicRow) => void;
+}
+
+function GenButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title="Gerar conteúdo de estudo"
+      aria-label="Gerar conteúdo de estudo"
+      className="mt-0.5 shrink-0 rounded px-1 py-0.5 text-muted opacity-0 transition-opacity hover:bg-card2 hover:text-accent group-hover:opacity-100"
+    >
+      <Sparkles className="h-3.5 w-3.5" />
+    </button>
+  );
 }
 
 function Section(props: SectionProps) {
   const {
     title, hint, variant, topics, done, loading, toggle, onGenerate, busy,
     canGenerate, buttonLabel, message, countNoun, allowTodo, linked, onCopyTodo,
+    onGenerateContent,
   } = props;
 
   const completed = topics.filter((t) => done[t.id]).length;
@@ -83,7 +111,7 @@ function Section(props: SectionProps) {
                 return (
                   <li
                     key={t.id}
-                    className="flex items-start gap-3 rounded-card border border-edge bg-card px-3 py-2.5"
+                    className="group flex items-start gap-3 rounded-card border border-edge bg-card px-3 py-2.5"
                   >
                     <button
                       onClick={() => toggle(t.id, !isDone)}
@@ -113,6 +141,9 @@ function Section(props: SectionProps) {
                         </div>
                       ) : null}
                     </div>
+                    {onGenerateContent ? (
+                      <GenButton onClick={() => onGenerateContent(t)} />
+                    ) : null}
                   </li>
                 );
               })}
@@ -174,6 +205,9 @@ function Section(props: SectionProps) {
                         </button>
                       )
                     ) : null}
+                    {onGenerateContent ? (
+                      <GenButton onClick={() => onGenerateContent(t)} />
+                    ) : null}
                   </div>
                 );
               })}
@@ -202,6 +236,9 @@ export default function ProgressChecklist({
   const [linked, setLinked] = useState<Set<string>>(new Set());
   const [busyMode, setBusyMode] = useState<Mode | null>(null);
   const [msg, setMsg] = useState<{ mode: Mode; text: string } | null>(null);
+  const [genTopic, setGenTopic] = useState<ProgressTopicRow | null>(null);
+  const [genMode, setGenMode] = useState<Mode | null>(null);
+  const [objective, setObjective] = useState("");
 
   const loadLinked = useCallback(async () => {
     if (!HAS_SUPABASE) return;
@@ -225,24 +262,27 @@ export default function ProgressChecklist({
     loadLinked();
   }, [loadLinked]);
 
-  async function generate(mode: Mode) {
+  async function generate(mode: Mode, objectiveText: string) {
+    setGenMode(null);
     setBusyMode(mode);
     setMsg(null);
     try {
       const res = await fetch("/api/milestones/generate", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ subjectId, mode }),
+        body: JSON.stringify({ subjectId, mode, objective: objectiveText }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro");
       await reload();
-      setMsg({
-        mode,
-        text: data.added > 0 ? `Adicionados ${data.added}.` : "Nada novo gerado.",
-      });
+      const text =
+        data.added > 0 ? `Adicionados ${data.added}.` : "Nada novo gerado.";
+      setMsg({ mode, text });
+      toast.success(text);
     } catch (e) {
-      setMsg({ mode, text: e instanceof Error ? e.message : "Erro ao gerar" });
+      const text = e instanceof Error ? e.message : "Erro ao gerar";
+      setMsg({ mode, text });
+      toast.error(text);
     } finally {
       setBusyMode(null);
     }
@@ -289,12 +329,16 @@ export default function ProgressChecklist({
           done={done}
           loading={loading}
           toggle={toggle}
-          onGenerate={() => generate("milestones")}
+          onGenerate={() => {
+            setObjective("");
+            setGenMode("milestones");
+          }}
           busy={busyMode === "milestones"}
           canGenerate={aiReady}
           buttonLabel="🧭 Gerar percurso"
           message={msg?.mode === "milestones" ? msg.text : null}
           countNoun="etapas"
+          onGenerateContent={aiReady ? setGenTopic : undefined}
         />
 
         <Section
@@ -305,7 +349,10 @@ export default function ProgressChecklist({
           done={done}
           loading={loading}
           toggle={toggle}
-          onGenerate={() => generate("tasks")}
+          onGenerate={() => {
+            setObjective("");
+            setGenMode("tasks");
+          }}
           busy={busyMode === "tasks"}
           canGenerate={aiReady}
           buttonLabel="✅ Criar tarefas"
@@ -314,8 +361,49 @@ export default function ProgressChecklist({
           allowTodo
           linked={linked}
           onCopyTodo={copyToTodo}
+          onGenerateContent={aiReady ? setGenTopic : undefined}
         />
       </div>
+
+      {genTopic ? (
+        <GenerateDialog
+          open={!!genTopic}
+          onOpenChange={(o) => !o && setGenTopic(null)}
+          subjectId={subjectId}
+          topicIds={[genTopic.id]}
+          sourceLabels={[genTopic.title]}
+        />
+      ) : null}
+
+      <Dialog open={!!genMode} onOpenChange={(o) => !o && setGenMode(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {genMode === "milestones" ? "Gerar percurso" : "Criar tarefas"}
+            </DialogTitle>
+            <DialogDescription>
+              Analisa os materiais da cadeira. Indica um objetivo para orientar o
+              resultado (opcional).
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={objective}
+            onChange={(e) => setObjective(e.target.value)}
+            placeholder="Ex.: preparar o teste daqui a 5 dias; focar nos conceitos fundamentais…"
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setGenMode(null)}>
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => genMode && generate(genMode, objective)}
+            >
+              Gerar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

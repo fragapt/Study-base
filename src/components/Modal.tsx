@@ -1,8 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
-// Lightweight centered modal. Click the backdrop or press Esc to close.
+// Centered modal built on the shadcn/Radix Dialog. Backdrop click and Esc close
+// it. Kept as a thin wrapper so existing callers (title/onClose/children) are
+// unchanged.
 export default function Modal({
   title,
   onClose,
@@ -12,37 +19,14 @@ export default function Modal({
   onClose: () => void;
   children: React.ReactNode;
 }) {
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-md rounded-card border border-edge bg-card p-5 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold">{title}</h3>
-          <button
-            onClick={onClose}
-            aria-label="Fechar"
-            className="text-lg leading-none text-dim hover:text-fg"
-          >
-            ×
-          </button>
-        </div>
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
         {children}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

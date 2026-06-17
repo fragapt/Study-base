@@ -35,6 +35,18 @@ export async function saveCalendarId(examCalendarId: string | null) {
   if (error) throw error;
 }
 
+// Calendar that editable events are written to (null ⇒ Google 'primary').
+export async function saveWriteCalendarId(writeCalendarId: string | null) {
+  const supabase = createClient();
+  const user_id = await currentUserId();
+  const { error } = await supabase.from("app_settings").upsert({
+    user_id,
+    write_calendar_id: writeCalendarId,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw error;
+}
+
 // ── Drives / sources ────────────────────────────────────────────────
 export async function addDrive(input: {
   name: string;

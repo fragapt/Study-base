@@ -5,7 +5,7 @@
 import "server-only";
 import { fetchDriveMedia, exportGoogleDoc } from "@/lib/google";
 import { getRawFile } from "@/lib/github";
-import { isTextPreviewable } from "@/lib/files";
+import { isTextPreviewable, type MaterialTarget } from "@/lib/files";
 
 const GOOGLE_DOC = "application/vnd.google-apps.document";
 
@@ -15,16 +15,8 @@ export const LIMITS = {
   TOTAL_BUDGET: 40000,
 };
 
-export interface ExtractTarget {
-  provider: "drive" | "github";
-  name: string;
-  mimeType: string;
-  // drive
-  fileId?: string;
-  resourceKey?: string;
-  // github
-  downloadUrl?: string | null;
-}
+// The text extractor consumes the same readable pointer the client posts.
+export type ExtractTarget = MaterialTarget;
 
 async function pdfToText(buf: ArrayBuffer): Promise<string | null> {
   try {
@@ -74,10 +66,11 @@ export async function extractText(t: ExtractTarget): Promise<string | null> {
 // Extracts from a prioritised list of targets within the global budget.
 export async function extractFromTargets(
   targets: ExtractTarget[],
+  maxFiles: number = LIMITS.MAX_FILES,
 ): Promise<{ name: string; text: string }[]> {
   const out: { name: string; text: string }[] = [];
   let budget = LIMITS.TOTAL_BUDGET;
-  for (const t of targets.slice(0, LIMITS.MAX_FILES)) {
+  for (const t of targets.slice(0, Math.max(1, maxFiles))) {
     if (budget <= 0) break;
     const text = await extractText(t);
     if (text) {

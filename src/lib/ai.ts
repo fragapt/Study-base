@@ -91,12 +91,12 @@ export function extractAssistantText(raw: string): string {
   return (message ?? tokens.join("")).trim();
 }
 
-// Sends a fully-composed prompt (instruction + materials) to the agent and
-// parses the JSON milestone/task array from the reply.
-export async function callAiForMilestones(
+// Sends a fully-composed prompt to the IAedu agent and returns the assistant's
+// reply text. Generic — callers parse the reply into whatever shape they need.
+export async function callAiAgent(
   prompt: string,
   creds: AiCredentials,
-): Promise<AiMilestone[]> {
+): Promise<string> {
   const form = new FormData();
   form.append("channel_id", creds.channelId);
   form.append("thread_id", crypto.randomUUID());
@@ -112,6 +112,13 @@ export async function callAiForMilestones(
   if (!res.ok) {
     throw new Error(`IA ${res.status}: ${(await res.text()).slice(0, 200)}`);
   }
-  const text = extractAssistantText(await res.text());
-  return parseMilestones(text);
+  return extractAssistantText(await res.text());
+}
+
+// Convenience wrapper for the milestones/tasks generator.
+export async function callAiForMilestones(
+  prompt: string,
+  creds: AiCredentials,
+): Promise<AiMilestone[]> {
+  return parseMilestones(await callAiAgent(prompt, creds));
 }

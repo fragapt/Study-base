@@ -54,6 +54,7 @@ export type Database = {
           ai_model: string | null;
           ai_channel_id: string | null;
           ai_key_present: boolean;
+          write_calendar_id: string | null;
         };
         Insert: {
           user_id: string;
@@ -63,6 +64,7 @@ export type Database = {
           ai_model?: string | null;
           ai_channel_id?: string | null;
           ai_key_present?: boolean;
+          write_calendar_id?: string | null;
         };
         Update: {
           user_id?: string;
@@ -72,6 +74,28 @@ export type Database = {
           ai_model?: string | null;
           ai_channel_id?: string | null;
           ai_key_present?: boolean;
+          write_calendar_id?: string | null;
+        };
+        Relationships: [];
+      };
+      google_tokens: {
+        Row: {
+          user_id: string;
+          refresh_token_enc: string;
+          scope: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          refresh_token_enc: string;
+          scope?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          refresh_token_enc?: string;
+          scope?: string | null;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -234,6 +258,42 @@ export type Database = {
         };
         Relationships: [];
       };
+      study_resources: {
+        Row: {
+          id: string;
+          user_id: string;
+          subject_id: string;
+          kind: string;
+          title: string;
+          objective: string | null;
+          content: unknown;
+          sources: unknown;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          subject_id: string;
+          kind: string;
+          title: string;
+          objective?: string | null;
+          content: unknown;
+          sources?: unknown;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          subject_id?: string;
+          kind?: string;
+          title?: string;
+          objective?: string | null;
+          content?: unknown;
+          sources?: unknown;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       topic_progress: {
         Row: {
           user_id: string;
@@ -322,6 +382,8 @@ export type SubjectFolderRow =
   Database["public"]["Tables"]["subject_folders"]["Row"];
 export type ProgressTopicRow =
   Database["public"]["Tables"]["progress_topics"]["Row"];
+export type StudyResourceRow =
+  Database["public"]["Tables"]["study_resources"]["Row"];
 export type TopicProgressRow =
   Database["public"]["Tables"]["topic_progress"]["Row"];
 export type PushSubscriptionRow =

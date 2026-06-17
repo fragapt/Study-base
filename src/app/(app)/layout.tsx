@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Toaster } from "sonner";
 import AppShell from "@/components/AppShell";
 import ConfigProvider from "@/lib/config/ConfigProvider";
 import { HAS_SUPABASE } from "@/lib/env";
@@ -25,6 +26,7 @@ export default async function AppGroupLayout({
   return (
     <ConfigProvider initial={config}>
       <AppShell>{children}</AppShell>
+      <Toaster theme="dark" position="bottom-right" richColors closeButton />
     </ConfigProvider>
   );
 }

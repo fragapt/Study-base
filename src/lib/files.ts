@@ -30,6 +30,20 @@ export interface DriveFile {
 export const FOLDER_MIME = "application/vnd.google-apps.folder";
 const SHORTCUT_MIME = "application/vnd.google-apps.shortcut";
 
+// A readable, provider-agnostic pointer to a single file. This is the wire shape
+// the client posts for document-scoped generation, and what the server text
+// extractor consumes (see `extract.ts`'s `ExtractTarget`).
+export interface MaterialTarget {
+  provider: Provider;
+  name: string;
+  mimeType: string;
+  // drive
+  fileId?: string;
+  resourceKey?: string;
+  // github
+  downloadUrl?: string | null;
+}
+
 // Synthetic MIME type from a file name (used for GitHub entries so the existing
 // icon/preview logic keeps working).
 export function mimeFromName(name: string): string {
@@ -91,6 +105,33 @@ export function folderTarget(
     };
   }
   return null;
+}
+
+// Builds a readable MaterialTarget from a selected file node, or null when the
+// node is a folder (or a GitHub file with no raw URL). Follows Drive shortcuts.
+export function targetFromDriveFile(file: DriveFile): MaterialTarget | null {
+  if (folderTarget(file)) return null;
+  if (file.provider === "github") {
+    if (!file.downloadUrl) return null;
+    return {
+      provider: "github",
+      name: file.name,
+      mimeType: file.mimeType,
+      downloadUrl: file.downloadUrl,
+    };
+  }
+  const isShortcut = file.mimeType === SHORTCUT_MIME;
+  const id = isShortcut ? file.shortcutDetails?.targetId : file.id;
+  if (!id) return null;
+  return {
+    provider: "drive",
+    name: file.name,
+    mimeType: effectiveMime(file),
+    fileId: id,
+    resourceKey: isShortcut
+      ? file.shortcutDetails?.targetResourceKey
+      : file.resourceKey,
+  };
 }
 
 export function fileIcon(mimeType: string): string {

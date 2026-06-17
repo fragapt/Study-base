@@ -1,73 +1,164 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Plus, CalendarPlus } from "lucide-react";
+import { toast } from "sonner";
 import { useExams } from "@/lib/useExams";
+import { useCalendarEvents, type EventInput } from "@/lib/useCalendarEvents";
 import { usePersistedState } from "@/lib/usePersistedState";
+import { connectGoogleCalendar } from "@/lib/connectGoogle";
 import { daysUntil } from "@/lib/dates";
-import { MONTHS_PT } from "@/lib/constants";
-import ExamCard from "./ExamCard";
-import type { ExamDTO } from "@/lib/exam";
+import { normalize, MONTHS_PT } from "@/lib/constants";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import EventCard from "./EventCard";
+import EventDialog from "./EventDialog";
+import type { CalendarEventDTO } from "@/lib/exam";
 
 type View = "lista" | "mes";
 
 export default function ExamesClient() {
-  const { exams, loading, error } = useExams();
+  const { exams, loading: examsLoading, error } = useExams();
+  const { events, connected, loading: eventsLoading, create, update, remove } =
+    useCalendarEvents();
   const [view, setView] = usePersistedState<View>("bde.exames.view", "lista");
+  const [query, setQuery] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<CalendarEventDTO | null>(null);
 
-  const upcoming = useMemo(
-    () =>
-      (exams ?? [])
-        .filter((e) => daysUntil(e.start) >= 0)
-        .sort((a, b) => +new Date(a.start) - +new Date(b.start)),
-    [exams],
-  );
+  // Merge the read-only exam feed with the editable Google events.
+  const merged = useMemo<CalendarEventDTO[]>(() => {
+    const examItems: CalendarEventDTO[] = (exams ?? []).map((e) => ({
+      ...e,
+      end: undefined,
+      tags: [],
+      editable: false,
+    }));
+    return [...examItems, ...events]
+      .filter((e) => daysUntil(e.start) >= 0)
+      .sort((a, b) => +new Date(a.start) - +new Date(b.start));
+  }, [exams, events]);
 
-  if (loading) {
-    return <Spinner label="A carregar do Google Calendar…" />;
-  }
-  if (error) {
-    return (
-      <p className="rounded-card border border-edge bg-card p-4 text-[13px] text-red">
-        {error}
-      </p>
+  const filtered = useMemo(() => {
+    const q = normalize(query.trim());
+    if (!q) return merged;
+    return merged.filter((e) =>
+      normalize(
+        [e.title, e.description ?? "", e.tags.join(" ")].join(" "),
+      ).includes(q),
     );
+  }, [merged, query]);
+
+  async function handleSave(input: EventInput) {
+    if (editing) {
+      await update(editing.id, input);
+      toast.success("Evento atualizado.");
+    } else {
+      await create(input);
+      toast.success("Evento criado.");
+    }
   }
-  if (!exams || exams.length === 0) {
-    return (
-      <p className="rounded-card border border-edge bg-card p-4 text-[13px] text-muted">
-        Nenhum exame encontrado no calendário.
-      </p>
-    );
+
+  async function handleDelete(e: CalendarEventDTO) {
+    if (!window.confirm(`Eliminar "${e.title}"?`)) return;
+    try {
+      await remove(e.id);
+      toast.success("Evento eliminado.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao eliminar");
+    }
   }
+
+  const loading = examsLoading || eventsLoading;
 
   return (
     <div>
-      <div className="mb-4 flex gap-2">
-        {(["lista", "mes"] as View[]).map((v) => (
-          <button
-            key={v}
-            onClick={() => setView(v)}
-            className={[
-              "rounded-card border px-3 py-1.5 text-[13px] transition-colors",
-              view === v
-                ? "border-accent bg-accentSoft text-accent"
-                : "border-edge text-muted hover:bg-card2 hover:text-fg",
-            ].join(" ")}
+      {/* Toolbar */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="flex gap-2">
+          {(["lista", "mes"] as View[]).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={[
+                "rounded-card border px-3 py-1.5 text-[13px] transition-colors",
+                view === v
+                  ? "border-accent bg-accentSoft text-accent"
+                  : "border-edge text-muted hover:bg-card2 hover:text-fg",
+              ].join(" ")}
+            >
+              {v === "lista" ? "Lista" : "Mês"}
+            </button>
+          ))}
+        </div>
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Filtrar por palavra-chave ou #etiqueta…"
+          className="h-8 max-w-xs flex-1"
+        />
+        {connected ? (
+          <Button
+            size="sm"
+            onClick={() => {
+              setEditing(null);
+              setDialogOpen(true);
+            }}
           >
-            {v === "lista" ? "Lista" : "Mês"}
-          </button>
-        ))}
+            <Plus className="h-4 w-4" /> Adicionar evento
+          </Button>
+        ) : null}
       </div>
 
-      {view === "lista" ? (
+      {/* Connect banner */}
+      {!eventsLoading && !connected ? (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-card border border-edge bg-card px-4 py-3">
+          <CalendarPlus className="h-5 w-5 text-accent" />
+          <div className="flex-1 text-[13px] text-muted">
+            Liga o teu Google Calendar para criares e editares eventos no site.
+          </div>
+          <Button size="sm" variant="outline" onClick={() => connectGoogleCalendar("/exames")}>
+            Ligar Google Calendar
+          </Button>
+        </div>
+      ) : null}
+
+      {error ? (
+        <p className="mb-3 rounded-card border border-edge bg-card p-3 text-[12px] text-red">
+          {error}
+        </p>
+      ) : null}
+
+      {loading ? (
+        <Spinner label="A carregar o calendário…" />
+      ) : filtered.length === 0 ? (
+        <p className="rounded-card border border-edge bg-card p-4 text-[13px] text-muted">
+          {query ? "Nenhum evento corresponde ao filtro." : "Nenhum evento próximo."}
+        </p>
+      ) : view === "lista" ? (
         <div className="space-y-2.5">
-          {upcoming.map((e) => (
-            <ExamCard key={e.id} exam={e} />
+          {filtered.map((e) => (
+            <EventCard
+              key={e.id}
+              event={e}
+              onEdit={(ev) => {
+                setEditing(ev);
+                setDialogOpen(true);
+              }}
+              onDelete={handleDelete}
+            />
           ))}
         </div>
       ) : (
-        <MonthView exams={upcoming} />
+        <MonthView events={filtered} />
       )}
+
+      <EventDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        initial={editing}
+        onSave={handleSave}
+      />
     </div>
   );
 }
@@ -84,7 +175,7 @@ function Spinner({ label }: { label: string }) {
   );
 }
 
-function MonthView({ exams }: { exams: ExamDTO[] }) {
+function MonthView({ events }: { events: CalendarEventDTO[] }) {
   const [offset, setOffset] = useState(0);
   const base = new Date();
   base.setDate(1);
@@ -95,8 +186,8 @@ function MonthView({ exams }: { exams: ExamDTO[] }) {
   const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7; // Mon=0
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  const byDay = new Map<number, ExamDTO[]>();
-  exams.forEach((e) => {
+  const byDay = new Map<number, CalendarEventDTO[]>();
+  events.forEach((e) => {
     const d = new Date(e.start);
     if (d.getFullYear() === year && d.getMonth() === month) {
       const list = byDay.get(d.getDate()) ?? [];

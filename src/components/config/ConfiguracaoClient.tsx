@@ -2,6 +2,7 @@
 
 import ImportTemplate from "./ImportTemplate";
 import CalendarConfig from "./CalendarConfig";
+import GoogleCalendarConfig from "./GoogleCalendarConfig";
 import AiConfig from "./AiConfig";
 import DrivesConfig from "./DrivesConfig";
 import SubjectsConfig from "./SubjectsConfig";
@@ -35,6 +36,12 @@ export default function ConfiguracaoClient() {
         hint="ID do calendário público do Google (Definições do calendário → ID do calendário). Tem de estar público."
       >
         <CalendarConfig />
+      </Section>
+      <Section
+        title="Google Calendar (eventos editáveis)"
+        hint="Liga a tua conta Google para criar, editar e eliminar eventos no site (com etiquetas). Os exames acima continuam só-leitura."
+      >
+        <GoogleCalendarConfig />
       </Section>
       <Section
         title="IA (opcional)"

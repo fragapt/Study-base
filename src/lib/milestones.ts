@@ -30,6 +30,7 @@ function materialsBlock(
   subjectName: string,
   entries: MaterialEntry[],
   snippets: { name: string; text: string }[],
+  objective = "",
 ): string {
   const toc = entries
     .map((e) => `${e.isFolder ? "[pasta]" : "[ficheiro]"} ${e.name}`)
@@ -40,11 +41,14 @@ function materialsBlock(
     .slice(0, 12000);
   return [
     `Cadeira: ${subjectName}`,
+    objective.trim() ? `Objetivo do utilizador: ${objective.trim()}` : ``,
     ``,
     `Lista de materiais (estrutura de pastas/ficheiros):`,
     toc,
     snippets.length ? `\nExtratos de ficheiros relevantes:\n${extracts}` : ``,
-  ].join("\n");
+  ]
+    .filter((l) => l !== ``)
+    .join("\n");
 }
 
 // Prompt for an editable checklist of actionable study tasks.
@@ -52,13 +56,14 @@ export function buildTasksPrompt(
   subjectName: string,
   entries: MaterialEntry[],
   snippets: { name: string; text: string }[],
+  objective = "",
 ): string {
   return [
     "És um assistente de estudo. Com base nos materiais de uma cadeira, cria uma",
     "lista de TAREFAS de estudo acionáveis e concretas (coisas para fazer/estudar).",
     JSON_INSTRUCTION,
     "",
-    materialsBlock(subjectName, entries, snippets),
+    materialsBlock(subjectName, entries, snippets, objective),
   ].join("\n");
 }
 
@@ -67,6 +72,7 @@ export function buildMilestonesPrompt(
   subjectName: string,
   entries: MaterialEntry[],
   snippets: { name: string; text: string }[],
+  objective = "",
 ): string {
   return [
     "És um assistente de estudo. Analisa os materiais de uma cadeira e devolve um",
@@ -76,6 +82,6 @@ export function buildMilestonesPrompt(
     "A ordem do array É a ordem do percurso.",
     JSON_INSTRUCTION,
     "",
-    materialsBlock(subjectName, entries, snippets),
+    materialsBlock(subjectName, entries, snippets, objective),
   ].join("\n");
 }

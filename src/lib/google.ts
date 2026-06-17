@@ -151,3 +151,129 @@ export async function listCalendarEvents(
 export function isExam(ev: CalendarEvent) {
   return Boolean(ev.start && (ev.start.dateTime || ev.start.date));
 }
+
+// ── Authenticated calendar access (OAuth Bearer token) ────────────────
+// Used for the user's own (possibly private) calendar with read/write scope.
+
+export interface AuthedEvent extends CalendarEvent {
+  extendedProperties?: { private?: Record<string, string> };
+}
+
+// Input shape for creating/updating an event. `start`/`end` are 'YYYY-MM-DD'
+// (all-day) or ISO dateTime strings.
+export interface EventWrite {
+  summary: string;
+  description?: string;
+  location?: string;
+  start: string;
+  end?: string;
+  allDay: boolean;
+  tags?: string[];
+}
+
+function authHeaders(accessToken: string): Record<string, string> {
+  return {
+    Authorization: `Bearer ${accessToken}`,
+    "Content-Type": "application/json",
+  };
+}
+
+function toEventResource(input: EventWrite) {
+  const start = input.allDay ? { date: input.start } : { dateTime: input.start };
+  let endVal = input.end;
+  if (!endVal) {
+    if (input.allDay) {
+      const d = new Date(input.start + "T00:00:00");
+      d.setDate(d.getDate() + 1);
+      endVal = d.toISOString().slice(0, 10);
+    } else {
+      const d = new Date(input.start);
+      d.setHours(d.getHours() + 1);
+      endVal = d.toISOString();
+    }
+  }
+  const end = input.allDay ? { date: endVal } : { dateTime: endVal };
+  const tags = (input.tags ?? []).filter(Boolean);
+  return {
+    summary: input.summary,
+    description: input.description || undefined,
+    location: input.location || undefined,
+    start,
+    end,
+    extendedProperties: { private: { tags: tags.join(",") } },
+  };
+}
+
+// Lists events from a calendar using an OAuth access token (works on private
+// calendars + 'primary').
+export async function listAuthedEvents(
+  accessToken: string,
+  calendarId: string,
+  opts: { daysAhead?: number; daysBehind?: number } = {},
+): Promise<AuthedEvent[]> {
+  const now = new Date();
+  const timeMin = new Date(now);
+  timeMin.setDate(timeMin.getDate() - (opts.daysBehind ?? 30));
+  const timeMax = new Date(now);
+  timeMax.setDate(timeMax.getDate() + (opts.daysAhead ?? 220));
+
+  const params = new URLSearchParams({
+    singleEvents: "true",
+    orderBy: "startTime",
+    timeMin: timeMin.toISOString(),
+    timeMax: timeMax.toISOString(),
+    maxResults: "250",
+  });
+  const res = await fetch(
+    `${CAL_BASE}/${encodeURIComponent(calendarId)}/events?${params}`,
+    { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store" },
+  );
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Calendar API ${res.status}: ${body.slice(0, 300)}`);
+  }
+  const data = (await res.json()) as { items?: AuthedEvent[] };
+  return data.items ?? [];
+}
+
+export async function createAuthedEvent(
+  accessToken: string,
+  calendarId: string,
+  input: EventWrite,
+): Promise<AuthedEvent> {
+  const res = await fetch(
+    `${CAL_BASE}/${encodeURIComponent(calendarId)}/events`,
+    { method: "POST", headers: authHeaders(accessToken), body: JSON.stringify(toEventResource(input)) },
+  );
+  if (!res.ok) throw new Error(`Calendar API ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  return res.json();
+}
+
+export async function updateAuthedEvent(
+  accessToken: string,
+  calendarId: string,
+  eventId: string,
+  input: EventWrite,
+): Promise<AuthedEvent> {
+  const res = await fetch(
+    `${CAL_BASE}/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
+    { method: "PATCH", headers: authHeaders(accessToken), body: JSON.stringify(toEventResource(input)) },
+  );
+  if (!res.ok) throw new Error(`Calendar API ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  return res.json();
+}
+
+export async function deleteAuthedEvent(
+  accessToken: string,
+  calendarId: string,
+  eventId: string,
+): Promise<void> {
+  const res = await fetch(
+    `${CAL_BASE}/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
+    { method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  // 410 = already deleted; treat as success.
+  if (!res.ok && res.status !== 410) {
+    throw new Error(`Calendar API ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  }
+}

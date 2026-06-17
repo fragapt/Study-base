@@ -42,18 +42,19 @@ async function fetchConfig(): Promise<UserConfig> {
     // Never select ai_api_key here — it must not reach the browser.
     supabase
       .from("app_settings")
-      .select("exam_calendar_id, ai_channel_id, ai_key_present")
+      .select("exam_calendar_id, ai_channel_id, ai_key_present, write_calendar_id")
       .eq("user_id", user.id)
       .maybeSingle(),
   ]);
 
   const s = settings.data as Pick<
     AppSettingsRow,
-    "exam_calendar_id" | "ai_channel_id" | "ai_key_present"
+    "exam_calendar_id" | "ai_channel_id" | "ai_key_present" | "write_calendar_id"
   > | null;
 
   return {
     examCalendarId: s?.exam_calendar_id ?? null,
+    writeCalendarId: s?.write_calendar_id ?? null,
     aiKeyPresent: s?.ai_key_present ?? false,
     aiChannelId: s?.ai_channel_id ?? null,
     drives: (drives.data as DriveRow[] | null) ?? [],

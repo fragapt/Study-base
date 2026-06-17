@@ -11,6 +11,8 @@ import type {
 
 export interface UserConfig {
   examCalendarId: string | null;
+  // Calendar id editable events are written to (null ⇒ 'primary').
+  writeCalendarId: string | null;
   // Non-secret AI flags. The API key itself never reaches the client.
   aiKeyPresent: boolean;
   aiChannelId: string | null;
@@ -22,6 +24,7 @@ export interface UserConfig {
 
 export const EMPTY_CONFIG: UserConfig = {
   examCalendarId: null,
+  writeCalendarId: null,
   aiKeyPresent: false,
   aiChannelId: null,
   drives: [],

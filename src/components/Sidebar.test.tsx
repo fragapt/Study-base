@@ -9,7 +9,7 @@ vi.mock("next/navigation", () => ({
 describe("Sidebar", () => {
   it("renders all nav items", () => {
     render(<Sidebar />);
-    ["Painel", "Exames", "Drives", "Tarefas", "Cadeiras", "Progresso", "Configuração", "Definições"].forEach(
+    ["Painel", "Exames", "Drives", "Tarefas", "Cadeiras", "Progresso", "Biblioteca", "Configuração", "Definições"].forEach(
       (label) => expect(screen.getByText(label)).toBeInTheDocument(),
     );
   });
