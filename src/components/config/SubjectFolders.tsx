@@ -16,6 +16,7 @@ import {
   rootFromDrive,
 } from "@/lib/sourceTree";
 import FolderPicker from "./FolderPicker";
+import { Button } from "@/components/ui/button";
 
 // Scans each source (Drive folder / GitHub repo) root + one level deep,
 // returning candidate folders for auto-matching.
@@ -106,13 +107,9 @@ export default function SubjectFolders() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <button
-          onClick={autoDetect}
-          disabled={scanning}
-          className="rounded-card border border-accent px-3 py-1.5 text-[13px] text-accent transition-colors hover:bg-accentSoft disabled:opacity-50"
-        >
+        <Button variant="outline" size="sm" onClick={autoDetect} disabled={scanning}>
           {scanning ? "A analisar…" : "Detetar automaticamente"}
-        </button>
+        </Button>
         {status ? <span className="text-[12px] text-muted">{status}</span> : null}
       </div>
 
@@ -162,7 +159,7 @@ export default function SubjectFolders() {
                   <select
                     value={pickDrive}
                     onChange={(e) => setPickDrive(e.target.value)}
-                    className="rounded-card border border-edge bg-app px-3 py-1.5 text-[13px] outline-none focus:border-accent"
+                    className="rounded-card border border-edge bg-app px-3 py-2 text-[13px] text-fg outline-none focus:border-accent"
                   >
                     <option value="">— Escolhe uma fonte —</option>
                     {config.drives.map((d) => (
@@ -199,15 +196,16 @@ export default function SubjectFolders() {
                   ) : null}
                 </div>
               ) : (
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => {
                     setPickerFor(s.id);
                     setPickDrive("");
                   }}
-                  className="rounded-card border border-edge px-3 py-1.5 text-[12px] text-muted hover:bg-card2 hover:text-fg"
                 >
                   + Adicionar pasta
-                </button>
+                </Button>
               )}
             </div>
           </div>

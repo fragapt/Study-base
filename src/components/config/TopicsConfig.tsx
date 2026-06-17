@@ -10,6 +10,9 @@ import {
   deleteTopicsForSubject,
 } from "@/lib/config/mutations";
 import Modal from "@/components/Modal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { ProgressTopicRow } from "@/lib/supabase/types";
 
 function EditTopicModal({
@@ -46,33 +49,24 @@ function EditTopicModal({
       onClose={onClose}
     >
       <div className="space-y-2.5">
-        <input
+        <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Título"
-          className="w-full rounded-card border border-edge bg-app px-3 py-2 text-[13px] outline-none focus:border-accent"
         />
-        <textarea
+        <Textarea
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
           placeholder="Descrição (opcional)"
           rows={3}
-          className="w-full resize-y rounded-card border border-edge bg-app px-3 py-2 text-[13px] outline-none focus:border-accent"
         />
         <div className="flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="rounded-card border border-edge px-3 py-1.5 text-[13px] text-muted hover:bg-card2 hover:text-fg"
-          >
+          <Button variant="ghost" size="sm" onClick={onClose}>
             Cancelar
-          </button>
-          <button
-            onClick={save}
-            disabled={busy}
-            className="rounded-card bg-accent px-4 py-1.5 text-[13px] font-semibold text-white hover:bg-[#1a6dc0] disabled:opacity-50"
-          >
+          </Button>
+          <Button size="sm" onClick={save} disabled={busy}>
             Guardar
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
@@ -183,25 +177,21 @@ function SubjectTopics({ subjectId }: { subjectId: string }) {
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <input
+        <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Nova tarefa"
-          className="w-[160px] rounded-card border border-edge bg-app px-3 py-1.5 text-[13px] outline-none focus:border-accent"
+          className="h-8 w-[160px]"
         />
-        <input
+        <Input
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
           placeholder="Descrição (opcional)"
-          className="min-w-[160px] flex-1 rounded-card border border-edge bg-app px-3 py-1.5 text-[13px] outline-none focus:border-accent"
+          className="h-8 min-w-[160px] flex-1"
         />
-        <button
-          onClick={add}
-          disabled={busy}
-          className="rounded-card border border-edge px-3 py-1.5 text-[12px] text-muted hover:bg-card2 hover:text-fg disabled:opacity-50"
-        >
+        <Button variant="secondary" size="sm" onClick={add} disabled={busy}>
           + Adicionar
-        </button>
+        </Button>
       </div>
 
       {editing ? (

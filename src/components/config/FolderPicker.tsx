@@ -10,6 +10,7 @@ import {
   folderLocator,
   rootLocator,
 } from "@/lib/sourceTree";
+import { Button } from "@/components/ui/button";
 
 export interface AttachFolder extends FolderLocator {
   name: string;
@@ -85,14 +86,15 @@ export default function FolderPicker({
         <span className="text-[12px] text-muted">
           Pasta atual: <span className="text-fg">{current.name}</span>
         </span>
-        <button
+        <Button
+          size="sm"
+          className="h-7 px-2.5 text-[11px]"
           onClick={() =>
             onAttach({ ...rootLocator(current.root), name: current.name })
           }
-          className="rounded-card bg-accent px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-[#1a6dc0]"
         >
           Anexar esta pasta
-        </button>
+        </Button>
       </div>
 
       <div className="mt-1 max-h-[240px] overflow-y-auto">

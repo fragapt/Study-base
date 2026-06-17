@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useConfig } from "@/lib/config/ConfigProvider";
 import { addSubject, deleteSubject, slugify } from "@/lib/config/mutations";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function SubjectsConfig() {
   const { config, reload } = useConfig();
@@ -81,23 +83,23 @@ export default function SubjectsConfig() {
       )}
 
       <div className="flex flex-wrap items-center gap-2 border-t border-edge2 pt-3">
-        <input
+        <Input
           value={icon}
           onChange={(e) => setIcon(e.target.value)}
-          className="w-[44px] rounded-card border border-edge bg-app px-2 py-2 text-center text-[15px] outline-none focus:border-accent"
+          className="w-[44px] px-2 text-center text-[15px]"
           aria-label="Ícone"
         />
-        <input
+        <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Nome da cadeira"
-          className="w-[160px] rounded-card border border-edge bg-app px-3 py-2 text-[13px] outline-none focus:border-accent"
+          className="w-[160px]"
         />
-        <input
+        <Input
           value={keywords}
           onChange={(e) => setKeywords(e.target.value)}
           placeholder="palavras-chave de exame (vírgulas)"
-          className="min-w-[160px] flex-1 rounded-card border border-edge bg-app px-3 py-2 text-[13px] outline-none focus:border-accent"
+          className="min-w-[160px] flex-1"
         />
         <input
           type="color"
@@ -106,13 +108,9 @@ export default function SubjectsConfig() {
           className="h-9 w-9 shrink-0 cursor-pointer rounded border border-edge bg-app"
           aria-label="Cor"
         />
-        <button
-          onClick={add}
-          disabled={busy}
-          className="rounded-card bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#1a6dc0] disabled:opacity-50"
-        >
+        <Button onClick={add} disabled={busy}>
           + Adicionar
-        </button>
+        </Button>
       </div>
       {error ? <p className="text-[12px] text-red">{error}</p> : null}
     </div>

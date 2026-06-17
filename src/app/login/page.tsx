@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { HAS_SUPABASE } from "@/lib/env";
+import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -40,13 +41,9 @@ export default function LoginPage() {
         </p>
 
         {HAS_SUPABASE ? (
-          <button
-            onClick={signIn}
-            disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-card bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#1a6dc0] disabled:opacity-50"
-          >
+          <Button onClick={signIn} disabled={loading} size="lg" className="w-full">
             {loading ? "A redirecionar…" : "Continuar com Google"}
-          </button>
+          </Button>
         ) : (
           <p className="rounded-card border border-edge bg-app p-3 text-[12px] text-muted">
             Configura o Supabase (ver <code>SETUP.md</code>) para ativar o início

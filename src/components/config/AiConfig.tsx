@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useConfig } from "@/lib/config/ConfigProvider";
 import { saveAiCredentials } from "@/lib/config/mutations";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function AiConfig() {
   const { config, reload } = useConfig();
@@ -59,36 +61,28 @@ export default function AiConfig() {
         . A chave é guardada de forma privada e nunca é enviada para o navegador.
       </p>
       <div className="flex flex-wrap items-center gap-2">
-        <input
+        <Input
           type="password"
           value={key}
           onChange={(e) => setKey(e.target.value)}
           placeholder={
             config.aiKeyPresent ? "Nova API key (vazio = manter)" : "API key (sk-usr-…)"
           }
-          className="min-w-[220px] flex-1 rounded-card border border-edge bg-app px-3 py-2 text-[13px] outline-none focus:border-accent"
+          className="min-w-[220px] flex-1"
         />
-        <input
+        <Input
           value={channelId}
           onChange={(e) => setChannelId(e.target.value)}
           placeholder="Channel ID"
-          className="w-[200px] rounded-card border border-edge bg-app px-3 py-2 text-[13px] outline-none focus:border-accent"
+          className="w-[200px]"
         />
-        <button
-          onClick={save}
-          disabled={busy}
-          className="rounded-card bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#1a6dc0] disabled:opacity-50"
-        >
+        <Button onClick={save} disabled={busy}>
           Guardar
-        </button>
+        </Button>
         {config.aiKeyPresent ? (
-          <button
-            onClick={clearKey}
-            disabled={busy}
-            className="rounded-card border border-edge px-3 py-2 text-[13px] text-muted hover:bg-card2 hover:text-fg disabled:opacity-50"
-          >
+          <Button variant="secondary" onClick={clearKey} disabled={busy}>
             Remover chave
-          </button>
+          </Button>
         ) : null}
         {msg ? <span className="text-[12px] text-muted">{msg}</span> : null}
       </div>

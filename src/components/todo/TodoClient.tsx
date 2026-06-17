@@ -4,7 +4,13 @@ import { useMemo, useState } from "react";
 import { useNotes } from "@/lib/useNotes";
 import { useConfig } from "@/lib/config/ConfigProvider";
 import { usePersistedState } from "@/lib/usePersistedState";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import NoteItem from "./NoteItem";
+
+const selectClass =
+  "rounded-card border border-edge bg-app px-3 py-2 text-[13px] text-fg outline-none focus:border-accent";
 
 export default function TodoClient({
   fixedSubject,
@@ -79,46 +85,42 @@ export default function TodoClient({
       {/* Add form */}
       <div className="mb-5 rounded-card border border-edge bg-card p-3">
         <div className="flex gap-2">
-          <input
+          <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !showDetails) submit();
             }}
             placeholder="Nova tarefa…"
-            className="flex-1 rounded-card border border-edge bg-app px-3 py-2 text-sm outline-none focus:border-accent"
+            className="flex-1"
           />
-          <button
+          <Button
+            variant="secondary"
+            size="icon"
             onClick={() => setShowDetails((s) => !s)}
-            className="rounded-card border border-edge px-3 text-[13px] text-muted hover:bg-card2 hover:text-fg"
             title="Detalhes"
           >
             ⋯
-          </button>
-          <button
-            onClick={submit}
-            disabled={saving || !title.trim()}
-            className="rounded-card bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#1a6dc0] disabled:opacity-50"
-          >
+          </Button>
+          <Button onClick={submit} disabled={saving || !title.trim()}>
             + Adicionar
-          </button>
+          </Button>
         </div>
 
         {showDetails ? (
           <div className="mt-2.5 space-y-2.5">
-            <textarea
+            <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Descrição (opcional)…"
               rows={2}
-              className="w-full resize-y rounded-card border border-edge bg-app px-3 py-2 text-[13px] outline-none focus:border-accent"
             />
             <div className="flex flex-wrap gap-2.5">
               {!fixedSubject ? (
                 <select
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  className="rounded-card border border-edge bg-app px-3 py-2 text-[13px] outline-none focus:border-accent"
+                  className={selectClass}
                 >
                   <option value="">— Sem cadeira —</option>
                   {subjects.map((s) => (
@@ -128,11 +130,11 @@ export default function TodoClient({
                   ))}
                 </select>
               ) : null}
-              <input
+              <Input
                 type="date"
                 value={due}
                 onChange={(e) => setDue(e.target.value)}
-                className="rounded-card border border-edge bg-app px-3 py-2 text-[13px] text-muted outline-none focus:border-accent"
+                className="w-auto text-muted"
               />
             </div>
           </div>
@@ -148,7 +150,7 @@ export default function TodoClient({
           <select
             value={filterSubject}
             onChange={(e) => setFilterSubject(e.target.value)}
-            className="rounded-card border border-edge bg-card px-3 py-1.5 text-[13px] outline-none focus:border-accent"
+            className={selectClass}
           >
             <option value="">Todas as cadeiras</option>
             {subjects.map((s) => (

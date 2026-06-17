@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 const VAPID_PUBLIC = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
 
@@ -97,22 +98,18 @@ export default function NotificationSettings() {
           <p className="mb-3 text-[13px] text-muted">
             Recebe avisos 3 dias antes, 1 dia antes e na manhã de cada exame.
           </p>
-          <button
+          <Button
+            variant={subscribed ? "secondary" : "default"}
+            size="sm"
             onClick={subscribed ? disable : enable}
             disabled={busy}
-            className={[
-              "rounded-card px-3 py-1.5 text-[13px] font-semibold transition-colors disabled:opacity-50",
-              subscribed
-                ? "border border-edge text-muted hover:bg-card2 hover:text-fg"
-                : "bg-accent text-white hover:bg-[#1a6dc0]",
-            ].join(" ")}
           >
             {busy
               ? "A processar…"
               : subscribed
                 ? "Desativar notificações"
                 : "Ativar notificações"}
-          </button>
+          </Button>
           {msg ? <p className="mt-2 text-[12px] text-muted">{msg}</p> : null}
         </>
       )}

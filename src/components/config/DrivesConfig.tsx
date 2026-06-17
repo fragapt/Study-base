@@ -5,6 +5,8 @@ import { useConfig } from "@/lib/config/ConfigProvider";
 import { addDrive, deleteDrive } from "@/lib/config/mutations";
 import { parseDriveFolderLink } from "@/lib/files";
 import { parseGithubRepoLink, looksLikeGithub } from "@/lib/githubLink";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function DrivesConfig() {
   const { config, reload } = useConfig();
@@ -109,17 +111,17 @@ export default function DrivesConfig() {
       )}
 
       <div className="flex flex-wrap items-center gap-2 border-t border-edge2 pt-3">
-        <input
+        <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Nome (ex.: NEEM)"
-          className="w-[140px] rounded-card border border-edge bg-app px-3 py-2 text-[13px] outline-none focus:border-accent"
+          className="w-[140px]"
         />
-        <input
+        <Input
           value={link}
           onChange={(e) => setLink(e.target.value)}
           placeholder="Link de pasta do Drive ou repositório do GitHub"
-          className="min-w-[200px] flex-1 rounded-card border border-edge bg-app px-3 py-2 text-[13px] outline-none focus:border-accent"
+          className="min-w-[200px] flex-1"
         />
         <input
           type="color"
@@ -128,13 +130,9 @@ export default function DrivesConfig() {
           className="h-9 w-9 shrink-0 cursor-pointer rounded border border-edge bg-app"
           aria-label="Cor"
         />
-        <button
-          onClick={add}
-          disabled={busy}
-          className="rounded-card bg-accent px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#1a6dc0] disabled:opacity-50"
-        >
+        <Button onClick={add} disabled={busy}>
           + Adicionar
-        </button>
+        </Button>
       </div>
       {error ? <p className="text-[12px] text-red">{error}</p> : null}
     </div>
