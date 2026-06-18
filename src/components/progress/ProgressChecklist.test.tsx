@@ -34,7 +34,7 @@ describe("ProgressChecklist", () => {
     });
     renderWithConfig(<ProgressChecklist subjectId="s1" />, config);
 
-    expect(screen.getByText(/1 \/ 12 tarefas/)).toBeInTheDocument();
+    expect(screen.getByText(/1 \/ 12 objetivos/)).toBeInTheDocument();
     expect(screen.getByText("8%")).toBeInTheDocument();
     expect(screen.getByText("Leis de Kirchhoff")).toBeInTheDocument();
   });

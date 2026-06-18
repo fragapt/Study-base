@@ -1,14 +1,6 @@
-import PageHeader from "@/components/PageHeader";
-import ProgressoClient from "@/components/progress/ProgressoClient";
+import { redirect } from "next/navigation";
 
+// Progresso is now reached through each cadeira (subject → Progresso tab).
 export default function ProgressoPage() {
-  return (
-    <div className="mx-auto max-w-5xl">
-      <PageHeader
-        title="Progresso"
-        subtitle="Percurso de aprendizagem e tarefas de estudo por cadeira, com percentagem concluída."
-      />
-      <ProgressoClient />
-    </div>
-  );
+  redirect("/cadeiras");
 }

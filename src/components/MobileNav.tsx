@@ -11,7 +11,7 @@ function isActive(pathname: string, href: string) {
 
 // Phone bottom tab bar. Drop the lowest-priority items to keep it readable.
 const MOBILE_ITEMS = NAV.filter((n) =>
-  ["/", "/exames", "/drives", "/todo", "/cadeiras"].includes(n.href),
+  ["/", "/exames", "/cadeiras", "/biblioteca", "/todo"].includes(n.href),
 );
 
 export default function MobileNav() {

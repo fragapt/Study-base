@@ -10,7 +10,7 @@ import { rootFromSubjectFolder } from "@/lib/sourceTree";
 import DriveTree from "@/components/drives/DriveTree";
 import FilePreview from "@/components/drives/FilePreview";
 import { Button } from "@/components/ui/button";
-import GenerateDialog from "@/components/study/GenerateDialog";
+import CreateContentDialog from "@/components/study/CreateContentDialog";
 
 export default function SubjectMaterials({ subjectId }: { subjectId: string }) {
   const { config } = useConfig();
@@ -111,12 +111,12 @@ export default function SubjectMaterials({ subjectId }: { subjectId: string }) {
       ) : null}
 
       {target ? (
-        <GenerateDialog
+        <CreateContentDialog
           open={genOpen}
           onOpenChange={setGenOpen}
-          subjectId={subjectId}
-          documents={[target]}
-          sourceLabels={[target.name]}
+          defaultSubjectId={subjectId}
+          lockSubject
+          defaultDocuments={[target]}
           onGenerated={() => setSaved(true)}
         />
       ) : null}

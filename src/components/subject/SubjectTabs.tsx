@@ -4,23 +4,23 @@ import { useConfig } from "@/lib/config/ConfigProvider";
 import { usePersistedState } from "@/lib/usePersistedState";
 import { subjectBySlug } from "@/lib/config/types";
 import SubjectMaterials from "./SubjectMaterials";
-import SubjectExams from "./SubjectExams";
 import TodoClient from "@/components/todo/TodoClient";
 import ProgressChecklist from "@/components/progress/ProgressChecklist";
 
-type Tab = "materiais" | "notas" | "progresso" | "exames";
+type Tab = "materiais" | "notas" | "progresso";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "materiais", label: "Materiais" },
   { key: "notas", label: "Notas" },
   { key: "progresso", label: "Progresso" },
-  { key: "exames", label: "Exames" },
 ];
 
 export default function SubjectTabs({ slug }: { slug: string }) {
   const { config } = useConfig();
   const subject = subjectBySlug(config, slug);
-  const [tab, setTab] = usePersistedState<Tab>("bde.cadeira.tab", "materiais");
+  const [stored, setTab] = usePersistedState<Tab>("bde.cadeira.tab", "materiais");
+  // Guard against a stale value (e.g. the removed "exames" tab).
+  const tab: Tab = TABS.some((t) => t.key === stored) ? stored : "materiais";
 
   if (!subject) return null;
 
@@ -50,7 +50,6 @@ export default function SubjectTabs({ slug }: { slug: string }) {
       {tab === "progresso" ? (
         <ProgressChecklist subjectId={subject.id} />
       ) : null}
-      {tab === "exames" ? <SubjectExams subject={subject} /> : null}
     </div>
   );
 }

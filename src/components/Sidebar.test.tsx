@@ -9,7 +9,7 @@ vi.mock("next/navigation", () => ({
 describe("Sidebar", () => {
   it("renders all nav items", () => {
     render(<Sidebar />);
-    ["Painel", "Exames", "Drives", "Tarefas", "Cadeiras", "Progresso", "Biblioteca", "Configuração", "Definições"].forEach(
+    ["Painel", "Exames", "Cadeiras", "Biblioteca", "Tarefas", "Configuração", "Definições"].forEach(
       (label) => expect(screen.getByText(label)).toBeInTheDocument(),
     );
   });
@@ -18,7 +18,7 @@ describe("Sidebar", () => {
     render(<Sidebar />);
     const active = screen.getByText("Exames").closest("a");
     expect(active?.className).toContain("text-accent");
-    const inactive = screen.getByText("Drives").closest("a");
+    const inactive = screen.getByText("Cadeiras").closest("a");
     expect(inactive?.className).not.toContain("text-accent");
   });
 });

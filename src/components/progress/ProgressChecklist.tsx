@@ -8,7 +8,7 @@ import { useProgress } from "@/lib/useProgress";
 import { createClient } from "@/lib/supabase/client";
 import { HAS_SUPABASE } from "@/lib/env";
 import { copyMilestoneToTodo } from "@/lib/config/mutations";
-import GenerateDialog from "@/components/study/GenerateDialog";
+import CreateContentDialog from "@/components/study/CreateContentDialog";
 import {
   Dialog,
   DialogContent,
@@ -342,8 +342,8 @@ export default function ProgressChecklist({
         />
 
         <Section
-          title="Tarefas de estudo"
-          hint="Sem tarefas. Cria tarefas a partir dos materiais ou adiciona-as em Configuração → Tópicos."
+          title="Objetivos"
+          hint="Sem objetivos. Cria objetivos de estudo a partir dos materiais ou adiciona-os em Configuração → Tópicos."
           variant="list"
           topics={tasks}
           done={done}
@@ -355,9 +355,9 @@ export default function ProgressChecklist({
           }}
           busy={busyMode === "tasks"}
           canGenerate={aiReady}
-          buttonLabel="✅ Criar tarefas"
+          buttonLabel="✅ Criar objetivos"
           message={msg?.mode === "tasks" ? msg.text : null}
-          countNoun="tarefas"
+          countNoun="objetivos"
           allowTodo
           linked={linked}
           onCopyTodo={copyToTodo}
@@ -366,12 +366,12 @@ export default function ProgressChecklist({
       </div>
 
       {genTopic ? (
-        <GenerateDialog
+        <CreateContentDialog
           open={!!genTopic}
           onOpenChange={(o) => !o && setGenTopic(null)}
-          subjectId={subjectId}
-          topicIds={[genTopic.id]}
-          sourceLabels={[genTopic.title]}
+          defaultSubjectId={subjectId}
+          lockSubject
+          defaultTopicIds={[genTopic.id]}
         />
       ) : null}
 
@@ -379,7 +379,7 @@ export default function ProgressChecklist({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {genMode === "milestones" ? "Gerar percurso" : "Criar tarefas"}
+              {genMode === "milestones" ? "Gerar percurso" : "Criar objetivos"}
             </DialogTitle>
             <DialogDescription>
               Analisa os materiais da cadeira. Indica um objetivo para orientar o

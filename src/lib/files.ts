@@ -107,6 +107,12 @@ export function folderTarget(
   return null;
 }
 
+// A stable identity for a MaterialTarget, used to key selections (so a target
+// pre-seeded into a picker matches the same file rendered in the tree).
+export function targetKey(t: MaterialTarget): string {
+  return `${t.provider}:${t.fileId ?? t.downloadUrl ?? t.name}`;
+}
+
 // Builds a readable MaterialTarget from a selected file node, or null when the
 // node is a folder (or a GitHub file with no raw URL). Follows Drive shortcuts.
 export function targetFromDriveFile(file: DriveFile): MaterialTarget | null {
